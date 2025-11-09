@@ -6,12 +6,17 @@ import { initializeFirebase } from '@/firebase/index.server';
 
 const { firestore } = initializeFirebase();
 
+const linkSchema = z.object({
+    name: z.string().min(1),
+    url: z.string().url(),
+});
+
 const formSchema = z.object({
   name: z.string().min(2),
   profileImage: z.string().url(),
   statement: z.string().min(10),
   gallery: z.string().min(1),
-  links: z.string().optional(),
+  links: z.array(linkSchema).optional(),
   tags: z.string().min(1),
 });
 
@@ -27,27 +32,25 @@ export async function addArtist(values: z.infer<typeof formSchema>) {
   try {
     const galleryArray = gallery.split(',').map(url => url.trim()).filter(url => url);
     const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
-    const linksArray = links ? JSON.parse(links) : [];
+    
+    // Filter out any empty link objects that might be submitted
+    const validLinks = links ? links.filter(link => link.name && link.url) : [];
 
     const artistData = {
         name,
         profileImage,
         statement,
         gallery: galleryArray,
-        links: linksArray,
+        links: validLinks,
         tags: tagsArray
     };
     
     const docRef = await addDoc(collection(firestore, "artists"), artistData);
     console.log("Document written with ID: ", docRef.id);
 
-
     return { success: true };
   } catch (error) {
     console.error("Error adding artist: ", error);
-    if (error instanceof SyntaxError) {
-        return { success: false, error: 'Failed to parse links JSON. Please check the format.' };
-    }
     return { success: false, error: 'Failed to add artist.' };
   }
 }

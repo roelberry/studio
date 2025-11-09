@@ -1,7 +1,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import * as z from 'zod';
 
 import { Button } from '@/components/ui/button';
@@ -19,13 +19,20 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast"
 import { addArtist } from './actions';
+import { PlusCircle, MinusCircle } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+
+const linkSchema = z.object({
+    name: z.string().min(1, 'Link name is required.'),
+    url: z.string().url('Please enter a valid URL.'),
+});
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   profileImage: z.string().url('Please enter a valid URL.'),
   statement: z.string().min(10, 'Statement must be at least 10 characters.'),
   gallery: z.string().min(1, 'Please add at least one gallery image URL.'),
-  links: z.string().optional(),
+  links: z.array(linkSchema).optional(),
   tags: z.string().min(1, 'Please add at least one tag.'),
 });
 
@@ -39,9 +46,14 @@ export default function AdminPage() {
             profileImage: '',
             statement: '',
             gallery: '',
-            links: '',
+            links: [{ name: '', url: '' }],
             tags: '',
         },
+    });
+
+    const { fields, append, remove } = useFieldArray({
+        control: form.control,
+        name: "links"
     });
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -140,20 +152,55 @@ export default function AdminPage() {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="links"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Links</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder='e.g., [{"name": "Website", "url": "https://..."}, {"name": "Instagram", "url": "https://..."}]' rows={4} {...field} />
-                    </FormControl>
-                    <FormDescription>JSON array of link objects.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+
+              <div>
+                <FormLabel>Links</FormLabel>
+                <FormDescription className="mb-4">Add links to the artist's website, social media, etc.</FormDescription>
+                {fields.map((field, index) => (
+                    <div key={field.id} className="flex items-center gap-4 py-2">
+                        <FormField
+                        control={form.control}
+                        name={`links.${index}.name`}
+                        render={({ field }) => (
+                            <FormItem className="flex-1">
+                                <FormControl>
+                                    <Input placeholder="Link Name (e.g. Website)" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <FormField
+                        control={form.control}
+                        name={`links.${index}.url`}
+                        render={({ field }) => (
+                            <FormItem className="flex-1">
+                                <FormControl>
+                                    <Input placeholder="URL (e.g. https://...)" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                        />
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1 && index === 0}>
+                            <MinusCircle className="text-destructive"/>
+                        </Button>
+                    </div>
+                ))}
+                <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={() => append({ name: '', url: '' })}
+                >
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Link
+                </Button>
+              </div>
+
+              <Separator />
+
               <Button type="submit" disabled={form.formState.isSubmitting}>
                 {form.formState.isSubmitting ? 'Submitting...' : 'Submit Artist'}
               </Button>
