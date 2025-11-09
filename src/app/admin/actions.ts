@@ -2,27 +2,46 @@
 'use server';
 
 import { z } from 'zod';
-import { collection, addDoc, doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { getFirestore } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
 import { initializeFirebase } from '@/firebase/index.server';
 import { revalidatePath } from 'next/cache';
 import type { Artist } from '@/lib/types';
 
-const { firestore, storage } = initializeFirebase();
+import { getFirestore } from 'firebase-admin/firestore';
+import { getStorage } from 'firebase-admin/storage';
+import { initializeFirebase } from '@/firebase/index.server';
+import { revalidatePath } from 'next/cache';
+import type { Artist } from '@/lib/types';
 
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
-async function uploadImage(file: File, artistName: string): Promise<string> {
+async function uploadImage(file: File, artistName: string, bucket: any): Promise<string> {
+    console.log('uploadImage artistName:', artistName);
     const sanitizedName = artistName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
-    const fileName = `${sanitizedName}-${Date.now()}-${file.name}`;
-    const storageRef = ref(storage, `artists/${fileName}`);
-    const snapshot = await uploadBytes(storageRef, file);
-    const downloadURL = await getDownloadURL(snapshot.ref);
-    return downloadURL;
+    const fileName = `artists/${sanitizedName}-${Date.now()}-${file.name}`;
+    
+    const buffer = Buffer.from(await file.arrayBuffer());
+
+    const gcsFile = bucket.file(fileName);
+    await gcsFile.save(buffer, {
+        metadata: {
+            contentType: file.type,
+        },
+    });
+    
+    const [url] = await gcsFile.getSignedUrl({
+        action: 'read',
+        expires: '03-09-2491', // A long time in the future
+    });
+
+    return url;
 }
 
 export async function addArtist(formData: FormData) {
+  const { firestore, storage } = initializeFirebase();
+  const bucket = storage.bucket('gs://studio-8522178126-1c4ba.appspot.com');
   try {
     const name = formData.get('name') as string;
     const statement = formData.get('statement') as string;
@@ -46,10 +65,10 @@ export async function addArtist(formData: FormData) {
     }
     // --- End Validation ---
 
-    const profileImageURL = await uploadImage(profileImage, name);
+    const profileImageURL = await uploadImage(profileImage, name, bucket);
 
     const galleryImageURLs = await Promise.all(
-        galleryFiles.map(file => uploadImage(file, name))
+        galleryFiles.map(file => uploadImage(file, name, bucket))
     );
     
     const parsedLinks = links ? JSON.parse(links) : [];
@@ -64,7 +83,7 @@ export async function addArtist(formData: FormData) {
         tags: parsedTags,
     };
     
-    const docRef = await addDoc(collection(firestore, "artists"), artistData);
+    const docRef = await firestore.collection("artists").add(artistData);
     
     revalidatePath('/');
     revalidatePath('/admin');
@@ -72,14 +91,15 @@ export async function addArtist(formData: FormData) {
 
     return { success: true };
   } catch (error) {
+    console.error("Error adding artist:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-    console.error("Error adding artist: ", errorMessage);
-    // Ensure a JSON response is always sent on failure
     return { success: false, error: `Failed to add artist: ${errorMessage}` };
   }
 }
 
 export async function updateArtist(id: string, formData: FormData, existingArtist: Artist) {
+  const { firestore, storage } = initializeFirebase();
+  const bucket = storage.bucket('gs://studio-8522178126-1c4ba.appspot.com');
   const name = formData.get('name') as string;
   const statement = formData.get('statement') as string;
   const links = formData.get('links') as string | null;
@@ -93,7 +113,7 @@ export async function updateArtist(id: string, formData: FormData, existingArtis
   }
   
   try {
-    const artistDocRef = doc(firestore, "artists", id);
+    const artistDocRef = firestore.collection("artists").doc(id);
     const updatedData: Partial<Artist> = {
       name,
       statement,
@@ -105,13 +125,13 @@ export async function updateArtist(id: string, formData: FormData, existingArtis
     if (newProfileImage && newProfileImage.size > 0) {
       if (existingArtist.profileImage) {
         try {
-          const oldImageRef = ref(storage, existingArtist.profileImage);
-          await deleteObject(oldImageRef);
+          const oldImageRef = bucket.file(new URL(existingArtist.profileImage).pathname.substring(1));
+          await oldImageRef.delete();
         } catch (storageError) {
            console.warn("Could not delete old profile image, it may have already been removed:", storageError);
         }
       }
-      updatedData.profileImage = await uploadImage(newProfileImage, name);
+      updatedData.profileImage = await uploadImage(newProfileImage, name, bucket);
     }
     
     const newGalleryImages = formData.getAll('gallery') as File[];
@@ -120,8 +140,8 @@ export async function updateArtist(id: string, formData: FormData, existingArtis
     const urlsToDelete = existingArtist.gallery.filter(url => !existingGalleryUrls.includes(url));
     for (const url of urlsToDelete) {
        try {
-        const oldImageRef = ref(storage, url);
-        await deleteObject(oldImageRef);
+        const oldImageRef = bucket.file(new URL(url).pathname.substring(1));
+        await oldImageRef.delete();
       } catch (storageError) {
          console.warn(`Could not delete old gallery image ${url}, it may have already been removed:`, storageError);
       }
@@ -130,13 +150,13 @@ export async function updateArtist(id: string, formData: FormData, existingArtis
     const uploadedUrls = await Promise.all(
       newGalleryImages
         .filter(file => file.size > 0)
-        .map(file => uploadImage(file, name))
+        .map(file => uploadImage(file, name, bucket))
     );
 
     updatedData.gallery = [...existingGalleryUrls, ...uploadedUrls];
 
 
-    await setDoc(artistDocRef, updatedData, { merge: true });
+    await artistDocRef.set(updatedData, { merge: true });
 
     revalidatePath('/');
     revalidatePath('/admin');
@@ -150,14 +170,14 @@ export async function updateArtist(id: string, formData: FormData, existingArtis
   }
 }
 
-async function deleteImagesFromStorage(imageUrls: string[]) {
+async function deleteImagesFromStorage(imageUrls: string[], bucket: any) {
     const deletePromises = imageUrls.map(async (url) => {
         if (!url) return;
         try {
-            const imageRef = ref(storage, url);
-            await deleteObject(imageRef);
+            const imageRef = bucket.file(new URL(url).pathname.substring(1));
+            await imageRef.delete();
         } catch (error: any) {
-            if (error.code === 'storage/object-not-found') {
+            if (error.code === 404) {
                 console.warn(`Image not found in storage, skipping delete: ${url}`);
             } else {
                 console.error(`Failed to delete image from storage: ${url}`, error);
@@ -168,22 +188,24 @@ async function deleteImagesFromStorage(imageUrls: string[]) {
 }
 
 export async function deleteArtist(artistId: string) {
-    const docRef = doc(firestore, "artists", artistId);
+    const { firestore, storage } = initializeFirebase();
+    const bucket = storage.bucket('gs://studio-8522178126-1c4ba.appspot.com');
+    const docRef = firestore.collection("artists").doc(artistId);
     try {
         // It's more robust to fetch the doc to get image URLs before deleting.
-        const artistDoc = await getDoc(docRef);
-        if (artistDoc.exists()) {
+        const artistDoc = await docRef.get();
+        if (artistDoc.exists) {
             const artistData = artistDoc.data() as Artist;
             // Delete all associated images from Firebase Storage
             const imageUrlsToDelete = [artistData.profileImage, ...artistData.gallery].filter(Boolean);
             if (imageUrlsToDelete.length > 0) {
-              await deleteImagesFromStorage(imageUrlsToDelete);
+              await deleteImagesFromStorage(imageUrlsToDelete, bucket);
             }
         } else {
            console.warn(`Artist document ${artistId} not found for deletion. Images in storage might be orphaned.`);
         }
 
-        await deleteDoc(docRef);
+        await docRef.delete();
         
         revalidatePath('/');
         revalidatePath('/admin');

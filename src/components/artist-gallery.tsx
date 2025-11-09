@@ -1,7 +1,7 @@
 
 'use client';
 
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { collection, onSnapshot, QuerySnapshot, DocumentData } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Artist } from '@/lib/types';
