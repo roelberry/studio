@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import { collection, onSnapshot, QuerySnapshot, DocumentData } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Artist } from '@/lib/types';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
 
 import { Button } from '@/components/ui/button';
 import {
@@ -75,12 +76,15 @@ export default function AdminPage() {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            name: '',
-            profileImage: '',
-            statement: '',
-            gallery: [{ url: '' }],
-            links: [{ name: '', url: '' }],
-            tags: [{ text: '' }],
+            name: 'New Artist',
+            profileImage: PlaceHolderImages.find(p => p.id === 'artist-1-profile')?.imageUrl || '',
+            statement: 'A brief statement about the artist and their work goes here. This helps visitors understand their mission and style.',
+            gallery: [
+                { url: PlaceHolderImages.find(p => p.id === 'artist-1-gallery-1')?.imageUrl || '' },
+                { url: PlaceHolderImages.find(p => p.id === 'artist-1-gallery-2')?.imageUrl || '' },
+            ],
+            links: [{ name: 'Website', url: 'https://example.com' }],
+            tags: [{ text: 'Social Justice' }, { text: 'Muralist' }],
         },
     });
 
