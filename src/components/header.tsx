@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
 import { useUser } from '@/firebase';
+import { useState } from 'react';
 
 const baseNavLinks = [
   { href: '/', label: 'Home' },
@@ -13,8 +14,13 @@ const baseNavLinks = [
 
 export function AppHeader() {
   const { user, isUserLoading } = useUser();
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navLinks = user ? [...baseNavLinks, { href: '/admin', label: 'Admin' }] : baseNavLinks;
+
+  const handleLinkClick = () => {
+    setIsMobileMenuOpen(false);
+  };
 
   return (
     <header className="bg-card shadow-sm sticky top-0 z-50">
@@ -34,7 +40,7 @@ export function AppHeader() {
 
         {/* Mobile Navigation */}
         <div className="md:hidden">
-          <Sheet>
+          <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon">
                 <Menu />
@@ -51,7 +57,7 @@ export function AppHeader() {
               <nav className="flex flex-col gap-4 mt-8">
                 {!isUserLoading && navLinks.map(({ href, label }) => (
                   <Button key={href} variant="ghost" asChild className="justify-start text-lg">
-                    <Link href={href}>{label}</Link>
+                    <Link href={href} onClick={handleLinkClick}>{label}</Link>
                   </Button>
                 ))}
               </nav>
