@@ -1,5 +1,5 @@
 /**
- * @file Firebase Security Rules for the Indiana Artivist Directory.
+ * @file Firebase Security Rules for the Indiana Arctivist Directory.
  *
  * Core Philosophy:
  * This ruleset prioritizes ease of access for public content while maintaining security against unauthorized data modification.  The `artists` collection is publicly readable, allowing for easy display of the artist gallery and profiles. Write access (create, update, delete) is implicitly limited to admin users via manual Firebase console management, as this is intended to be a curated directory and a class project with a short deadline.

@@ -4,7 +4,7 @@
       "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Artist",
       "type": "object",
-      "description": "Represents an artist or collective featured in the Indiana Artivist Directory.",
+      "description": "Represents an artist or collective featured in the Indiana Arctivist Directory.",
       "properties": {
         "id": {
           "type": "string",
