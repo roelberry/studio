@@ -1,7 +1,7 @@
 'use server';
 
 import { z } from 'zod';
-import { collection, addDoc, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { collection, addDoc, doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 import { initializeFirebase } from '@/firebase/index.server';
 import { revalidatePath } from 'next/cache';
@@ -14,14 +14,7 @@ const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/web
 
 // This server-side schema focuses on presence, not file-specifics,
 // as those are best validated on the client.
-const formSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters.'),
-  statement: z.string().min(10, 'Statement must be at least 10 characters.'),
-  profileImage: z.instanceof(File).refine((file) => file.size > 0, 'Profile image is required.'),
-  gallery: z.array(z.instanceof(File)).min(1, 'At least one gallery image is required.'),
-  links: z.string().optional(), // JSON string
-  tags: z.string().optional(), // JSON string
-});
+// REMOVED ZOD SCHEMA causing server crash. Validation is now manual.
 
 async function uploadImage(file: File, artistName: string): Promise<string> {
     const sanitizedName = artistName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
@@ -33,30 +26,33 @@ async function uploadImage(file: File, artistName: string): Promise<string> {
 }
 
 export async function addArtist(formData: FormData) {
-
-  const rawFormData = {
-    name: formData.get('name'),
-    statement: formData.get('statement'),
-    profileImage: formData.get('profileImage'),
-    gallery: formData.getAll('gallery').filter(f => (f as File).size > 0),
-    links: formData.get('links'),
-    tags: formData.get('tags'),
-  };
-
-  const validatedFields = formSchema.safeParse(rawFormData);
-
-  if (!validatedFields.success) {
-    console.error('Validation Errors:', validatedFields.error.flatten().fieldErrors);
-    return { success: false, error: 'Invalid fields provided.' };
-  }
-
-  const { name, statement, profileImage, gallery, links, tags } = validatedFields.data;
-
   try {
+    const name = formData.get('name') as string;
+    const statement = formData.get('statement') as string;
+    const profileImage = formData.get('profileImage') as File;
+    const galleryFiles = formData.getAll('gallery').filter(f => (f as File).size > 0) as File[];
+    const links = formData.get('links') as string | null;
+    const tags = formData.get('tags') as string | null;
+
+    // --- Manual Server-Side Validation ---
+    if (!name || name.length < 2) {
+      return { success: false, error: 'Name must be at least 2 characters.' };
+    }
+    if (!statement || statement.length < 10) {
+      return { success: false, error: 'Statement must be at least 10 characters.' };
+    }
+    if (!profileImage || profileImage.size === 0) {
+      return { success: false, error: 'A profile image is required.' };
+    }
+    if (galleryFiles.length === 0) {
+      return { success: false, error: 'At least one gallery image is required.' };
+    }
+    // --- End Validation ---
+
     const profileImageURL = await uploadImage(profileImage, name);
 
     const galleryImageURLs = await Promise.all(
-        gallery.map(file => uploadImage(file, name))
+        galleryFiles.map(file => uploadImage(file, name))
     );
     
     const parsedLinks = links ? JSON.parse(links) : [];
@@ -81,6 +77,7 @@ export async function addArtist(formData: FormData) {
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
     console.error("Error adding artist: ", errorMessage);
+    // Ensure a JSON response is always sent on failure
     return { success: false, error: `Failed to add artist: ${errorMessage}` };
   }
 }
@@ -169,12 +166,13 @@ export async function updateArtist(id: string, formData: FormData, existingArtis
 
 async function deleteImagesFromStorage(imageUrls: string[]) {
     const deletePromises = imageUrls.map(async (url) => {
+        if (!url) return;
         try {
             const imageRef = ref(storage, url);
             await deleteObject(imageRef);
         } catch (error: any) {
             if (error.code === 'storage/object-not-found') {
-                console.warn(`Image not found, skipping delete: ${url}`);
+                console.warn(`Image not found in storage, skipping delete: ${url}`);
             } else {
                 console.error(`Failed to delete image from storage: ${url}`, error);
             }
@@ -186,15 +184,18 @@ async function deleteImagesFromStorage(imageUrls: string[]) {
 export async function deleteArtist(artistId: string) {
     const docRef = doc(firestore, "artists", artistId);
     try {
+        // It's more robust to fetch the doc to get image URLs before deleting.
         const artistDoc = await getDoc(docRef);
-        if (!artistDoc.exists()) {
-            return { success: false, error: "Artist not found." };
+        if (artistDoc.exists()) {
+            const artistData = artistDoc.data() as Artist;
+            // Delete all associated images from Firebase Storage
+            const imageUrlsToDelete = [artistData.profileImage, ...artistData.gallery].filter(Boolean);
+            if (imageUrlsToDelete.length > 0) {
+              await deleteImagesFromStorage(imageUrlsToDelete);
+            }
+        } else {
+           console.warn(`Artist document ${artistId} not found for deletion. Images in storage might be orphaned.`);
         }
-        const artistData = artistDoc.data() as Artist;
-        
-        // Delete all associated images from Firebase Storage
-        const imageUrlsToDelete = [artistData.profileImage, ...artistData.gallery];
-        await deleteImagesFromStorage(imageUrlsToDelete);
 
         await deleteDoc(docRef);
         
@@ -207,5 +208,3 @@ export async function deleteArtist(artistId: string) {
         return { success: false, error: "Failed to delete artist." };
     }
 }
-
-    
