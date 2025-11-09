@@ -44,6 +44,7 @@ const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
 const fileSchema = z.instanceof(File)
+  .refine((file) => file.size > 0, 'Image is required.')
   .refine((file) => file.size <= MAX_FILE_SIZE, `Max file size is 4MB.`)
   .refine(
     (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
@@ -90,10 +91,10 @@ export default function AdminPage() {
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            name: 'New Artist',
-            statement: 'A brief statement about the artist and their work goes here. This helps visitors understand their mission and style.',
-            links: [{ name: 'Website', url: 'https://example.com' }],
-            tags: [{ text: 'Social Justice' }, { text: 'Muralist' }],
+            name: '',
+            statement: '',
+            links: [{ name: '', url: '' }],
+            tags: [{ text: '' }],
         },
     });
 
@@ -118,13 +119,17 @@ export default function AdminPage() {
         formData.append('profileImage', values.profileImage);
         
         values.gallery.forEach((file) => {
-            formData.append('gallery', file);
+            if(file.size > 0) {
+              formData.append('gallery', file);
+            }
         });
         
-        if (values.links) {
+        if (values.links && values.links.length > 0 && values.links[0].name && values.links[0].url) {
             formData.append('links', JSON.stringify(values.links));
         }
-        formData.append('tags', JSON.stringify(values.tags));
+        if (values.tags && values.tags.length > 0 && values.tags[0].text) {
+          formData.append('tags', JSON.stringify(values.tags));
+        }
 
         const result = await addArtist(formData);
         
@@ -134,6 +139,27 @@ export default function AdminPage() {
                 description: `Artist "${values.name}" has been added.`,
             })
             form.reset();
+             // Reset file inputs
+            if (profileImageRef.current) {
+                profileImageRef.current.value = '';
+            }
+            galleryRefs.current.forEach(ref => {
+                if (ref) ref.value = '';
+            });
+            // Reset field arrays
+            form.reset({
+                name: '',
+                statement: '',
+                links: [{ name: '', url: '' }],
+                tags: [{ text: '' }],
+                gallery: [],
+                profileImage: undefined,
+            });
+            appendGallery(new File([], ""));
+            appendTag({text: ''});
+            appendLink({name: '', url: ''});
+
+
         } else {
             toast({
                 variant: "destructive",
@@ -193,6 +219,7 @@ export default function AdminPage() {
                       <Input 
                         type="file" 
                         accept="image/*"
+                        ref={profileImageRef}
                         onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
@@ -214,7 +241,7 @@ export default function AdminPage() {
                   <FormItem>
                     <FormLabel>Artist Statement</FormLabel>
                     <FormControl>
-                      <Textarea placeholder="Tell us about the artist's work..." rows={5} {...field} />
+                      <Textarea placeholder="A brief statement about the artist and their work..." rows={5} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -235,6 +262,7 @@ export default function AdminPage() {
                              <Input 
                                 type="file" 
                                 accept="image/*"
+                                ref={(el) => (galleryRefs.current[index] = el)}
                                 onChange={(e) => {
                                     const file = e.target.files?.[0];
                                     if (file) {
@@ -257,7 +285,7 @@ export default function AdminPage() {
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Add Image
                 </Button>
-                 <FormMessage>{form.formState.errors.gallery?.message}</FormMessage>
+                 <FormMessage>{form.formState.errors.gallery?.message || form.formState.errors.gallery?.root?.message}</FormMessage>
               </div>
 
               <div>
@@ -399,3 +427,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    

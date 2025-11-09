@@ -4,6 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import * as z from 'zod';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
@@ -25,22 +26,33 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast"
 import { updateArtist } from '../../actions';
-import { PlusCircle, MinusCircle } from 'lucide-react';
+import { PlusCircle, MinusCircle, X } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
+
+const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+
+const fileSchema = z.instanceof(File)
+  .optional()
+  .refine((file) => !file || file.size <= MAX_FILE_SIZE, `Max file size is 4MB.`)
+  .refine(
+    (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
+    "Only .jpg, .jpeg, .png and .webp formats are supported."
+  );
 
 const linkSchema = z.object({
     name: z.string().min(1, 'Link name is required.'),
     url: z.string().url('Please enter a valid URL.'),
 });
 
-// The form schema for editing will still rely on URLs for now.
-// We will update this to handle file uploads in a subsequent step.
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
-  profileImage: z.string().url('Please enter a valid URL.'),
   statement: z.string().min(10, 'Statement must be at least 10 characters.'),
-  gallery: z.array(z.object({ url: z.string().url() })).min(1, 'Please add at least one gallery image URL.'),
+  profileImage: fileSchema,
+  existingGalleryUrls: z.array(z.string().url()),
+  newGalleryImages: z.array(fileSchema),
   links: z.array(linkSchema).optional(),
   tags: z.array(z.object({ text: z.string().min(1) })).min(1, 'Please add at least one tag.'),
 });
@@ -50,15 +62,16 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
     const router = useRouter();
     const firestore = useFirestore();
     const artistId = params.id;
+    const [artist, setArtist] = useState<Artist | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: '',
-            profileImage: '',
             statement: '',
-            gallery: [{ url: '' }],
+            existingGalleryUrls: [],
+            newGalleryImages: [],
             links: [{ name: '', url: '' }],
             tags: [{ text: '' }],
         },
@@ -72,14 +85,14 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
-          const artist = docSnap.data() as Omit<Artist, 'id'>;
+          const fetchedArtist = { id: docSnap.id, ...docSnap.data() } as Artist;
+          setArtist(fetchedArtist);
           form.reset({
-            name: artist.name,
-            profileImage: artist.profileImage,
-            statement: artist.statement,
-            gallery: artist.gallery.map(url => ({ url })),
-            links: artist.links.length > 0 ? artist.links : [{ name: '', url: '' }],
-            tags: artist.tags.map(text => ({ text })),
+            name: fetchedArtist.name,
+            statement: fetchedArtist.statement,
+            existingGalleryUrls: fetchedArtist.gallery,
+            links: fetchedArtist.links.length > 0 ? fetchedArtist.links : [{ name: '', url: '' }],
+            tags: fetchedArtist.tags.map(text => ({ text })),
           });
         } else {
           toast({
@@ -98,37 +111,61 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
         control: form.control,
         name: "links"
     });
-     const { fields: galleryFields, append: appendGallery, remove: removeGallery } = useFieldArray({
+     const { fields: newGalleryFields, append: appendNewGallery, remove: removeNewGallery } = useFieldArray({
         control: form.control,
-        name: "gallery"
+        name: "newGalleryImages"
     });
     const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({
         control: form.control,
         name: "tags"
     });
 
+    const existingGalleryUrls = form.watch('existingGalleryUrls');
+    const removeExistingGalleryImage = (index: number) => {
+        const updatedUrls = [...existingGalleryUrls];
+        updatedUrls.splice(index, 1);
+        form.setValue('existingGalleryUrls', updatedUrls);
+    }
+
+
     async function onSubmit(values: z.infer<typeof formSchema>) {
-        toast({
-            variant: "destructive",
-            title: "Functionality Not Implemented",
-            description: "Editing artists with file uploads is not yet complete.",
+        if (!artist) return;
+
+        const formData = new FormData();
+        formData.append('name', values.name);
+        formData.append('statement', values.statement);
+
+        if (values.profileImage && values.profileImage.size > 0) {
+            formData.append('profileImage', values.profileImage);
+        }
+
+        formData.append('existingGalleryUrls', JSON.stringify(values.existingGalleryUrls));
+        values.newGalleryImages.forEach(file => {
+             if (file && file.size > 0) {
+                formData.append('gallery', file);
+             }
         });
-        // This will be implemented in the next step.
-        // const result = await updateArtist(artistId, values);
         
-        // if (result.success) {
-        //     toast({
-        //         title: "Success!",
-        //         description: `Artist "${values.name}" has been updated.`,
-        //     })
-        //     router.push('/admin');
-        // } else {
-        //     toast({
-        //         variant: "destructive",
-        //         title: "Uh oh! Something went wrong.",
-        //         description: result.error || "There was a problem with your request.",
-        //     })
-        // }
+        if (values.links) {
+            formData.append('links', JSON.stringify(values.links));
+        }
+        formData.append('tags', JSON.stringify(values.tags));
+
+        const result = await updateArtist(artistId, formData, artist);
+        
+        if (result.success) {
+            toast({
+                title: "Success!",
+                description: `Artist "${values.name}" has been updated.`,
+            })
+            router.push('/admin');
+        } else {
+            toast({
+                variant: "destructive",
+                title: "Uh oh! Something went wrong.",
+                description: result.error || "There was a problem with your request.",
+            })
+        }
     }
 
   if (isLoading) {
@@ -172,7 +209,7 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl font-headline">Edit Artist</CardTitle>
-          <CardDescription>Update the details for {form.getValues('name')}. (Image uploads disabled for edits)</CardDescription>
+          <CardDescription>Update the details for {form.getValues('name')}.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -190,20 +227,36 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="profileImage"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Profile Image URL</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://example.com/image.jpg" {...field} />
-                    </FormControl>
-                    <FormDescription>The main image for the artist card. (Editing images is not yet supported)</FormDescription>
-                    <FormMessage />
-                  </FormItem>
+              
+              <FormItem>
+                <FormLabel>Profile Image</FormLabel>
+                {artist?.profileImage && (
+                    <div className="mb-4">
+                        <Image src={artist.profileImage} alt="Current profile image" width={150} height={150} className="rounded-md object-cover" />
+                    </div>
                 )}
-              />
+                <FormField
+                    control={form.control}
+                    name="profileImage"
+                    render={({ field: { onChange, value, ...rest } }) => (
+                    <FormControl>
+                        <Input 
+                            type="file" 
+                            accept="image/*"
+                            onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) onChange(file);
+                            }}
+                            {...rest}
+                        />
+                    </FormControl>
+                    )}
+                />
+                <FormDescription>Upload a new image to replace the current one.</FormDescription>
+                <FormMessage />
+              </FormItem>
+
+
               <FormField
                 control={form.control}
                 name="statement"
@@ -219,32 +272,51 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
               />
 
               <div>
-                <FormLabel>Gallery Image URLs</FormLabel>
-                <FormDescription className="mb-4">Add URLs for the artist's gallery. (Editing images is not yet supported)</FormDescription>
-                {galleryFields.map((field, index) => (
+                <FormLabel>Gallery Images</FormLabel>
+                <FormDescription className="mb-4">Manage the artist's gallery images.</FormDescription>
+                <div className="grid grid-cols-3 gap-4 mb-4">
+                    {existingGalleryUrls.map((url, index) => (
+                        <div key={index} className="relative group">
+                            <Image src={url} alt={`Gallery image ${index + 1}`} width={200} height={200} className="rounded-md object-cover aspect-square" />
+                            <Button type="button" variant="destructive" size="icon" className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => removeExistingGalleryImage(index)}>
+                                <X className="h-4 w-4" />
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+
+                <FormLabel className="text-sm font-medium">Add New Images</FormLabel>
+                {newGalleryFields.map((field, index) => (
                   <div key={field.id} className="flex items-center gap-4 py-2">
                     <FormField
                       control={form.control}
-                      name={`gallery.${index}.url`}
-                      render={({ field }) => (
+                      name={`newGalleryImages.${index}`}
+                      render={({ field: { onChange, value, ...rest } }) => (
                         <FormItem className="flex-1">
                           <FormControl>
-                            <Input placeholder="https://example.com/gallery-image.jpg" {...field} />
+                             <Input 
+                                type="file" 
+                                accept="image/*"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) onChange(file);
+                                }}
+                                {...rest}
+                              />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeGallery(index)} disabled={galleryFields.length <= 1}>
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeNewGallery(index)}>
                       <MinusCircle className="text-destructive"/>
                     </Button>
                   </div>
                 ))}
-                <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendGallery({ url: '' })}>
+                <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendNewGallery(undefined)}>
                   <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Image URL
+                  Add New Image
                 </Button>
-                <FormMessage>{form.formState.errors.gallery?.message}</FormMessage>
               </div>
 
                <div>
@@ -339,3 +411,5 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
     </div>
   );
 }
+
+    
