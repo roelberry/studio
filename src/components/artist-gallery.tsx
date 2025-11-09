@@ -103,23 +103,15 @@ export function GallerySkeleton() {
 }
 
 export function ArtistGalleryWrapper({ initialArtists }: { initialArtists: Artist[] }) {
-    // This state now correctly defaults to the server-provided artists.
     const [artists, setArtists] = useState<Artist[]>(initialArtists);
-    // isLoading is true if we have no initial artists and are thus waiting for the client-side fetch.
     const [isLoading, setIsLoading] = useState(initialArtists.length === 0);
-    
-    // The useFirestore hook is now guarded and will only be called on the client.
-    const [firestore, setFirestore] = useState<any>(null);
-    const getFirestore = useFirestore;
+    const firestore = useFirestore();
 
     useEffect(() => {
-        // This effect runs only on the client, safely getting the firestore instance.
-        setFirestore(getFirestore());
-    }, [getFirestore]);
-
-    useEffect(() => {
-      // This effect only runs if firestore has been successfully initialized on the client.
-      if (!firestore) return;
+      if (!firestore) {
+        // Firestore might not be available on first render, so we wait.
+        return;
+      }
 
       const artistsCollection = collection(firestore, 'artists');
       const unsubscribe = onSnapshot(artistsCollection, (snapshot: QuerySnapshot<DocumentData>) => {
