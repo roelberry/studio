@@ -63,7 +63,7 @@ export default function LoginPage() {
   return (
     <div className="max-w-md mx-auto">
       <Card>
-        <CardHeader>
+        <CardHeader className="text-center">
           <CardTitle className="text-3xl font-headline">Admin Login</CardTitle>
           <CardDescription>Enter your credentials to access the admin area.</CardDescription>
         </CardHeader>
