@@ -11,19 +11,13 @@ const { firestore, storage } = initializeFirebase();
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
-const fileSchema = z.instanceof(File)
-  .refine((file) => file.size > 0, 'File is required.')
-  .refine((file) => file.size <= MAX_FILE_SIZE, `Max file size is 4MB.`)
-  .refine(
-    (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
-    "Only .jpg, .jpeg, .png and .webp formats are supported."
-  );
-
+// This server-side schema focuses on presence, not file-specifics,
+// as those are best validated on the client.
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   statement: z.string().min(10, 'Statement must be at least 10 characters.'),
-  profileImage: fileSchema,
-  gallery: z.array(fileSchema).min(1, 'At least one gallery image is required.'),
+  profileImage: z.instanceof(File).refine((file) => file.size > 0, 'Profile image is required.'),
+  gallery: z.array(z.instanceof(File)).min(1, 'At least one gallery image is required.'),
   links: z.string().optional(), // JSON string
   tags: z.string(), // JSON string
 });
@@ -51,8 +45,8 @@ export async function addArtist(formData: FormData) {
   const validatedFields = formSchema.safeParse(rawFormData);
 
   if (!validatedFields.success) {
-    console.error(validatedFields.error.flatten().fieldErrors);
-    return { success: false, error: 'Invalid fields' };
+    console.error('Validation Errors:', validatedFields.error.flatten().fieldErrors);
+    return { success: false, error: 'Invalid fields provided.' };
   }
 
   const { name, statement, profileImage, gallery, links, tags } = validatedFields.data;
@@ -63,9 +57,9 @@ export async function addArtist(formData: FormData) {
     const galleryImageURLs = await Promise.all(
         gallery.map(file => uploadImage(file, name))
     );
-
+    
     const parsedLinks = links ? JSON.parse(links) : [];
-    const parsedTags = JSON.parse(tags).map((tag: { text: string }) => tag.text);
+    const parsedTags = tags ? JSON.parse(tags).map((tag: { text: string }) => tag.text) : [];
 
     const artistData = {
         name,
@@ -83,8 +77,9 @@ export async function addArtist(formData: FormData) {
 
     return { success: true };
   } catch (error) {
-    console.error("Error adding artist: ", error);
-    return { success: false, error: 'Failed to add artist.' };
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
+    console.error("Error adding artist: ", errorMessage);
+    return { success: false, error: `Failed to add artist: ${errorMessage}` };
   }
 }
 
