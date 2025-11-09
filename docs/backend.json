@@ -70,7 +70,7 @@
         "$schema": "http://json-schema.org/draft-07/schema#",
         "title": "User",
         "type": "object",
-        "description": "Represents a user account in the system.",
+        "description": "Represents a user account in the system, with roles for authorization.",
         "properties": {
           "uid": {
             "type": "string",
@@ -87,7 +87,7 @@
           },
           "role": {
             "type": "string",
-            "description": "The user's role, e.g., 'admin' or 'editor'.",
+            "description": "The user's role, used for authorization. Only 'admin' has write privileges.",
             "enum": ["admin"]
           }
         },
@@ -109,7 +109,7 @@
           "schema": {
             "$ref": "#/backend/entities/Artist"
           },
-          "description": "Stores artist data. No denormalization is required as the data is intended to be publicly accessible, and admin access is managed through the Firebase console.",
+          "description": "Stores artist data. Publicly readable, but write access is restricted to authenticated admin users.",
           "params": [
             {
               "name": "artistId",
@@ -125,7 +125,7 @@
           "schema": {
             "$ref": "#/backend/entities/User"
           },
-          "description": "Stores additional user profile information.",
+          "description": "Stores user profile information, including roles for authorization. Write access is restricted to admins or the user themselves.",
           "params": [
             {
               "name": "userId",
@@ -135,7 +135,7 @@
         }
       }
     ],
-    "reasoning": "The Firestore structure is designed to directly reflect the application's data model, focusing on simplicity and ease of querying. The `artists` collection stores all artist data, enabling straightforward retrieval and display for the gallery and profile pages. Since the application has a limited scope (a class project) and doesn't involve complex user roles or collaborative features, authorization independence is maintained implicitly. All data is effectively public (accessible to anyone visiting the site) or restricted to admin users through manual Firebase console management. Therefore, no denormalization is required. The structure supports QAPs by allowing direct listing of artists and retrieval of individual artist profiles without complex filtering or authorization checks at the rule level."
+    "reasoning": "The Firestore structure is designed for simplicity and security. The `artists` collection is publicly readable for the gallery, but write operations are secured by rules that check for an admin role in the user's auth token. This prevents unauthorized modification of the directory. The `users` collection stores role information, which is critical for the security rules to function correctly."
   },
   "storage": {
     "rules": "storage.rules"
