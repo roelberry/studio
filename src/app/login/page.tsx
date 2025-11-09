@@ -96,9 +96,11 @@ export default function LoginPage() {
                   </FormItem>
                 )}
               />
-              <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? 'Signing In...' : 'Sign In'}
-              </Button>
+              <div className="flex justify-center">
+                <Button type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? 'Signing In...' : 'Sign In'}
+                </Button>
+              </div>
             </form>
           </Form>
         </CardContent>
