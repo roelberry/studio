@@ -11,9 +11,9 @@ interface ArtistCardProps {
 export function ArtistCard({ artist }: ArtistCardProps) {
   return (
     <Link href={`/artists/${artist.id}`} className="group block">
-      <Card className="h-full flex flex-col overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-1">
+      <Card className="h-full flex flex-col overflow-hidden transition-all duration-300 hover:shadow-xl hover:-translate-y-2">
         <CardHeader className="p-0">
-          <div className="aspect-w-4 aspect-h-3 relative">
+          <div className="aspect-w-4 aspect-h-3 relative overflow-hidden">
             <Image
               src={artist.profileImage}
               alt={`Artwork by ${artist.name}`}
