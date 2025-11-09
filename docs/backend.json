@@ -1,0 +1,85 @@
+{
+  "entities": {
+    "Artist": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Artist",
+      "type": "object",
+      "description": "Represents an artist or collective featured in the Indiana Artivist Directory.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the Artist entity."
+        },
+        "name": {
+          "type": "string",
+          "description": "The name of the artist or collective."
+        },
+        "profileImage": {
+          "type": "string",
+          "description": "URL to the main image for the artist's card in the gallery."
+        },
+        "statement": {
+          "type": "string",
+          "description": "The artist's statement or 'About' section text."
+        },
+        "gallery": {
+          "type": "array",
+          "description": "A list of image URLs for the artist's profile gallery.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "links": {
+          "type": "array",
+          "description": "A list of links to the artist's website, social media, or portfolio.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "tags": {
+          "type": "array",
+          "description": "A list of tags associated with the artist's work (e.g., 'Social Justice', 'Environmental Art').",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "id",
+        "name",
+        "profileImage",
+        "statement",
+        "gallery",
+        "links",
+        "tags"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/artists/{artistId}",
+        "definition": {
+          "entityName": "Artist",
+          "schema": {
+            "$ref": "#/backend/entities/Artist"
+          },
+          "description": "Stores artist data. No denormalization is required as the data is intended to be publicly accessible, and admin access is managed through the Firebase console.",
+          "params": [
+            {
+              "name": "artistId",
+              "description": "Unique identifier for the artist."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore structure is designed to directly reflect the application's data model, focusing on simplicity and ease of querying. The `artists` collection stores all artist data, enabling straightforward retrieval and display for the gallery and profile pages. Since the application has a limited scope (a class project) and doesn't involve complex user roles or collaborative features, authorization independence is maintained implicitly. All data is effectively public (accessible to anyone visiting the site) or restricted to admin users through manual Firebase console management. Therefore, no denormalization is required. The structure supports QAPs by allowing direct listing of artists and retrieval of individual artist profiles without complex filtering or authorization checks at the rule level."
+  }
+}
