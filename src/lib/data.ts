@@ -1,3 +1,4 @@
+
 import 'server-only';
 import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
 import { initializeFirebase } from '@/firebase/index.server';
@@ -17,6 +18,8 @@ const sampleArtists: Artist[] = [
     gallery: [
       PlaceHolderImages.find(p => p.id === 'artist-1-gallery-1')?.imageUrl || '',
       PlaceHolderImages.find(p => p.id === 'artist-1-gallery-2')?.imageUrl || '',
+      PlaceHolderImages.find(p => p.id === 'artist-1-gallery-3')?.imageUrl || '',
+      PlaceHolderImages.find(p => p.id === 'artist-1-gallery-4')?.imageUrl || '',
     ],
     links: [
       { name: 'Website', url: 'https://example.com' },
@@ -76,9 +79,6 @@ export async function getArtists(): Promise<Artist[]> {
 
 export async function getArtistById(id: string): Promise<Artist | undefined> {
   const sampleArtist = sampleArtists.find(artist => artist.id === id);
-  if (sampleArtist) {
-    return sampleArtist;
-  }
   
   const docRef = doc(firestore, 'artists', id);
   try {
@@ -87,10 +87,11 @@ export async function getArtistById(id: string): Promise<Artist | undefined> {
     if (docSnap.exists()) {
       return { id: docSnap.id, ...docSnap.data() } as Artist;
     } else {
-      return undefined;
+      // If not in firestore, return from sample data
+      return sampleArtist;
     }
   } catch (error) {
       console.error(`Error fetching artist by ID "${id}", returning sample data if available:`, error);
-      return undefined;
+      return sampleArtist;
   }
 }
