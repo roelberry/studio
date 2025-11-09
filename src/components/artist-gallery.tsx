@@ -104,28 +104,32 @@ export function GallerySkeleton() {
 
 export function ArtistGalleryWrapper({ initialArtists }: { initialArtists: Artist[] }) {
     const [artists, setArtists] = useState<Artist[]>(initialArtists);
-    const [isLoading, setIsLoading] = useState(initialArtists.length === 0);
+    const [isLoading, setIsLoading] = useState(true);
     const firestore = useFirestore();
 
     useEffect(() => {
-      if (!firestore) {
-        // Firestore might not be available on first render, so we wait.
-        return;
-      }
+        // Wait until firestore is available.
+        if (!firestore) {
+          // We still show initial artists, but loading is true until we connect to Firestore.
+          setIsLoading(initialArtists.length === 0);
+          return;
+        }
 
-      const artistsCollection = collection(firestore, 'artists');
-      const unsubscribe = onSnapshot(artistsCollection, (snapshot: QuerySnapshot<DocumentData>) => {
-        const firestoreArtists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Artist));
-        setArtists(firestoreArtists);
-        setIsLoading(false);
-      }, (error) => {
-        console.error("Error fetching artists:", error);
-        // Fallback to initial artists if firestore fails on the client.
-        setArtists(initialArtists);
-        setIsLoading(false);
-      });
+        // We have a firestore instance, so we are loading live data.
+        setIsLoading(true);
+        const artistsCollection = collection(firestore, 'artists');
+        const unsubscribe = onSnapshot(artistsCollection, (snapshot: QuerySnapshot<DocumentData>) => {
+            const firestoreArtists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Artist));
+            setArtists(firestoreArtists);
+            setIsLoading(false);
+        }, (error) => {
+            console.error("Error fetching artists:", error);
+            // Fallback to initial artists if firestore fails on the client.
+            setArtists(initialArtists);
+            setIsLoading(false);
+        });
 
-      return () => unsubscribe();
+        return () => unsubscribe();
     }, [firestore, initialArtists]);
 
     const allTags = useMemo(() => {

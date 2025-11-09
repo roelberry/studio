@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -77,6 +78,9 @@ export default function AdminPage() {
     const galleryRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     useEffect(() => {
+      if (!firestore) {
+        return;
+      }
       const artistsCollection = collection(firestore, 'artists');
       const unsubscribe = onSnapshot(artistsCollection, (snapshot: QuerySnapshot<DocumentData>) => {
         const artistsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Artist));
@@ -427,5 +431,3 @@ export default function AdminPage() {
     </div>
   );
 }
-
-    
