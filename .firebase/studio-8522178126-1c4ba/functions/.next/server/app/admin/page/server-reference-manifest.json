@@ -1,0 +1,35 @@
+{
+  "node": {
+    "40850b7215435cdd9a13515828efca0dc20eed1b1a": {
+      "workers": {
+        "app/admin/page": {
+          "moduleId": 72019,
+          "async": false,
+          "exportedName": "addArtist",
+          "filename": "src/app/admin/actions.ts"
+        }
+      },
+      "layer": {
+        "app/admin/page": "action-browser"
+      },
+      "exportedName": "addArtist",
+      "filename": "src/app/admin/actions.ts"
+    },
+    "4065b7b5a0adc46a393658dac1bb575cdd09b2ad0b": {
+      "workers": {
+        "app/admin/page": {
+          "moduleId": 72019,
+          "async": false,
+          "exportedName": "deleteArtist",
+          "filename": "src/app/admin/actions.ts"
+        }
+      },
+      "layer": {
+        "app/admin/page": "action-browser"
+      },
+      "exportedName": "deleteArtist",
+      "filename": "src/app/admin/actions.ts"
+    }
+  },
+  "edge": {}
+}

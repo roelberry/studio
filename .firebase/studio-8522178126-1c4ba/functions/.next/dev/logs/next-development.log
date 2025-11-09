@@ -1,0 +1,41 @@
+[00:00:03.537] Server  LOG     
+[00:00:03.537] Server  LOG        We detected TypeScript in your project and reconfigured your tsconfig.json file for you.
+[00:00:03.538] Server  LOG        The following suggested values were added to your tsconfig.json. These values can be changed to fit your project's needs:
+
+[00:00:03.539] Server  LOG        	- include was updated to add '.next/dev/types/**/*.ts'
+[00:00:03.539] Server  LOG     
+[00:00:03.539] Server  LOG        The following mandatory changes were made to your tsconfig.json:
+
+[00:00:03.542] Server  LOG        	- jsx was set to react-jsx (next.js uses the React automatic runtime)
+[00:00:03.542] Server  LOG     
+[00:00:03.907] Server  LOG      ✓ Ready in 2.8s
+[00:00:06.968] Server  LOG      ○ Compiling /login ...
+[00:00:22.274] Server  WARN     ⚠ Cross origin request detected from 9000-firebase-studio-1762675373539.cluster-smt6abzakreauqfe7ecpnx3px2.cloudworkstations.dev to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+[00:00:32.310] Server  LOG      ○ Compiling /admin ...
+[00:02:02.702] Server  ERROR   Error: Body exceeded 1 MB limit.
+To configure the body size limit for Server Actions, see: https://nextjs.org/docs/app/api-reference/next-config-js/serverActions#bodysizelimit
+[00:02:03.379] Server  ERROR    ⨯ "uncaughtException:" Error: Body exceeded 1 MB limit.
+To configure the body size limit for Server Actions, see: https://nextjs.org/docs/app/api-reference/next-config-js/serverActions#bodysizelimit
+[00:02:03.839] Server  ERROR    ⨯ "uncaughtException: " Error: Body exceeded 1 MB limit.
+To configure the body size limit for Server Actions, see: https://nextjs.org/docs/app/api-reference/next-config-js/serverActions#bodysizelimit
+[00:02:04.329] Server  ERROR    ⨯ Error: Body exceeded 1 MB limit.
+To configure the body size limit for Server Actions, see: https://nextjs.org/docs/app/api-reference/next-config-js/serverActions#bodysizelimit
+[00:02:04.340] Browser ERROR   unhandledRejection: Error: An unexpected response was received from the server.
+[00:08:05.164] Server  WARN     ⚠ Cross origin request detected from 6000-firebase-studio-1762675373539.cluster-smt6abzakreauqfe7ecpnx3px2.cloudworkstations.dev to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+[00:08:05.438] Browser ERROR   uncaughtError: Error: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem.
+[00:08:37.257] Browser ERROR   uncaughtError: Error: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem.
+[00:10:55.934] Browser ERROR   uncaughtError: Error: Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem.
