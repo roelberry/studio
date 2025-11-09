@@ -1,7 +1,10 @@
 
 import { ArtistGalleryWrapper } from '@/components/artist-gallery';
+import { getArtists } from '@/lib/data';
 
-export default function Home() {
+export default async function Home() {
+  const initialArtists = await getArtists();
+
   return (
     <div className="space-y-8">
       <div className="text-center">
@@ -13,7 +16,7 @@ export default function Home() {
         </p>
       </div>
       
-      <ArtistGalleryWrapper />
+      <ArtistGalleryWrapper initialArtists={initialArtists} />
     </div>
   );
 }

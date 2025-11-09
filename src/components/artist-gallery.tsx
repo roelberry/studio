@@ -102,24 +102,36 @@ export function GallerySkeleton() {
     );
 }
 
-export function ArtistGalleryWrapper() {
+export function ArtistGalleryWrapper({ initialArtists }: { initialArtists: Artist[] }) {
     const firestore = useFirestore();
-    const [artists, setArtists] = useState<Artist[]>([]);
-    const [isLoading, setIsLoading] = useState(true);
+    const [artists, setArtists] = useState<Artist[]>(initialArtists);
+    const [isLoading, setIsLoading] = useState(initialArtists.length === 0);
 
     useEffect(() => {
       const artistsCollection = collection(firestore, 'artists');
       const unsubscribe = onSnapshot(artistsCollection, (snapshot: QuerySnapshot<DocumentData>) => {
-        const artistsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Artist));
-        setArtists(artistsData);
+        const firestoreArtists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Artist));
+        
+        // Combine firestore data with initial sample data, preventing duplicates
+        const combinedArtists = [...firestoreArtists];
+        const firestoreIds = new Set(firestoreArtists.map(a => a.id));
+        initialArtists.forEach(initialArtist => {
+          if (!firestoreIds.has(initialArtist.id)) {
+            combinedArtists.push(initialArtist);
+          }
+        });
+
+        setArtists(combinedArtists);
         setIsLoading(false);
       }, (error) => {
         console.error("Error fetching artists:", error);
+        // Fallback to initial artists if firestore fails
+        setArtists(initialArtists);
         setIsLoading(false);
       });
 
       return () => unsubscribe();
-    }, [firestore]);
+    }, [firestore, initialArtists]);
 
     const allTags = useMemo(() => {
         const tags = new Set<string>();
