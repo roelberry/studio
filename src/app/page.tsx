@@ -1,9 +1,7 @@
-import { ArtistCard } from '@/components/artist-card';
-import { getArtists } from '@/lib/data';
+import { Suspense } from 'react';
+import { ArtistGallery, GallerySkeleton } from '@/components/artist-gallery';
 
 export default async function Home() {
-  const artists = await getArtists();
-
   return (
     <div className="space-y-8">
       <div className="text-center">
@@ -15,17 +13,9 @@ export default async function Home() {
         </p>
       </div>
       
-      {artists.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-          {artists.map((artist) => (
-            <ArtistCard key={artist.id} artist={artist} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-16">
-            <p className="text-muted-foreground">No artists found. Add artists via the admin page.</p>
-        </div>
-      )}
+      <Suspense fallback={<GallerySkeleton />}>
+        <ArtistGallery />
+      </Suspense>
     </div>
   );
 }
