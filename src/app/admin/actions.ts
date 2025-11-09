@@ -1,8 +1,10 @@
 'use server';
 
 import { z } from 'zod';
-// import { db } from '@/lib/firebase';
-// import { collection, addDoc } from "firebase/firestore"; 
+import { collection, addDoc } from "firebase/firestore"; 
+import { initializeFirebase } from '@/firebase/index.server';
+
+const { firestore } = initializeFirebase();
 
 const formSchema = z.object({
   name: z.string().min(2),
@@ -36,12 +38,8 @@ export async function addArtist(values: z.infer<typeof formSchema>) {
         tags: tagsArray
     };
     
-    // TODO: Add data to Firestore
-    // For now, we'll just log it to the console.
-    console.log("New artist data to be added to Firestore:", artistData);
-    // In a real application, you would uncomment the following lines:
-    // const docRef = await addDoc(collection(db, "artists"), artistData);
-    // console.log("Document written with ID: ", docRef.id);
+    const docRef = await addDoc(collection(firestore, "artists"), artistData);
+    console.log("Document written with ID: ", docRef.id);
 
 
     return { success: true };

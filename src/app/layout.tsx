@@ -3,6 +3,7 @@ import './globals.css';
 import { AppHeader } from '@/components/header';
 import { AppFooter } from '@/components/footer';
 import { Toaster } from "@/components/ui/toaster"
+import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
   title: 'Indiana Artivist Directory',
@@ -22,12 +23,14 @@ export default function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Alegreya:wght@400;700&family=Belleza&display=swap" rel="stylesheet" />
       </head>
       <body className="font-body antialiased flex flex-col min-h-screen">
-        <AppHeader />
-        <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          {children}
-        </main>
-        <AppFooter />
-        <Toaster />
+        <FirebaseClientProvider>
+          <AppHeader />
+          <main className="flex-grow container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            {children}
+          </main>
+          <AppFooter />
+          <Toaster />
+        </FirebaseClientProvider>
       </body>
     </html>
   );
