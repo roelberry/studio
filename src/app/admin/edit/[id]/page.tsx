@@ -38,9 +38,9 @@ const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   profileImage: z.string().url('Please enter a valid URL.'),
   statement: z.string().min(10, 'Statement must be at least 10 characters.'),
-  gallery: z.string().min(1, 'Please add at least one gallery image URL.'),
+  gallery: z.array(z.object({ url: z.string().url() })).min(1, 'Please add at least one gallery image URL.'),
   links: z.array(linkSchema).optional(),
-  tags: z.string().min(1, 'Please add at least one tag.'),
+  tags: z.array(z.object({ text: z.string().min(1) })).min(1, 'Please add at least one tag.'),
 });
 
 export default function EditArtistPage({ params }: { params: { id: string } }) {
@@ -56,9 +56,9 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
             name: '',
             profileImage: '',
             statement: '',
-            gallery: '',
+            gallery: [{ url: '' }],
             links: [{ name: '', url: '' }],
-            tags: '',
+            tags: [{ text: '' }],
         },
     });
 
@@ -75,9 +75,9 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
             name: artist.name,
             profileImage: artist.profileImage,
             statement: artist.statement,
-            gallery: artist.gallery.join(', '),
+            gallery: artist.gallery.map(url => ({ url })),
             links: artist.links.length > 0 ? artist.links : [{ name: '', url: '' }],
-            tags: artist.tags.join(', '),
+            tags: artist.tags.map(text => ({ text })),
           });
         } else {
           toast({
@@ -92,9 +92,17 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
       fetchArtist();
     }, [artistId, firestore, form, router, toast]);
 
-    const { fields, append, remove } = useFieldArray({
+    const { fields: linkFields, append: appendLink, remove: removeLink } = useFieldArray({
         control: form.control,
         name: "links"
+    });
+     const { fields: galleryFields, append: appendGallery, remove: removeGallery } = useFieldArray({
+        control: form.control,
+        name: "gallery"
+    });
+    const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({
+        control: form.control,
+        name: "tags"
     });
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -201,39 +209,69 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="gallery"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Gallery Image URLs</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Enter URLs, separated by commas" rows={3} {...field} />
-                    </FormControl>
-                    <FormDescription>Comma-separated list of image URLs for the artist's gallery.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="tags"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Tags</FormLabel>
-                    <FormControl>
-                      <Input placeholder="e.g., Social Justice, Muralist" {...field} />
-                    </FormControl>
-                    <FormDescription>Comma-separated list of tags.</FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+
+              <div>
+                <FormLabel>Gallery Image URLs</FormLabel>
+                <FormDescription className="mb-4">Add URLs for the artist's gallery.</FormDescription>
+                {galleryFields.map((field, index) => (
+                  <div key={field.id} className="flex items-center gap-4 py-2">
+                    <FormField
+                      control={form.control}
+                      name={`gallery.${index}.url`}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormControl>
+                            <Input placeholder="https://example.com/gallery-image.jpg" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeGallery(index)} disabled={galleryFields.length <= 1}>
+                      <MinusCircle className="text-destructive"/>
+                    </Button>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendGallery({ url: '' })}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Image URL
+                </Button>
+                <FormMessage>{form.formState.errors.gallery?.message}</FormMessage>
+              </div>
+
+               <div>
+                <FormLabel>Tags</FormLabel>
+                <FormDescription className="mb-4">Add tags that describe the artist's work.</FormDescription>
+                {tagFields.map((field, index) => (
+                  <div key={field.id} className="flex items-center gap-4 py-2">
+                    <FormField
+                      control={form.control}
+                      name={`tags.${index}.text`}
+                      render={({ field }) => (
+                        <FormItem className="flex-1">
+                          <FormControl>
+                            <Input placeholder="e.g., Social Justice" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <Button type="button" variant="ghost" size="icon" onClick={() => removeTag(index)} disabled={tagFields.length <= 1}>
+                      <MinusCircle className="text-destructive"/>
+                    </Button>
+                  </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendTag({ text: '' })}>
+                  <PlusCircle className="mr-2 h-4 w-4" />
+                  Add Tag
+                </Button>
+                <FormMessage>{form.formState.errors.tags?.message}</FormMessage>
+              </div>
 
               <div>
                 <FormLabel>Links</FormLabel>
                 <FormDescription className="mb-4">Add links to the artist's website, social media, etc.</FormDescription>
-                {fields.map((field, index) => (
+                {linkFields.map((field, index) => (
                     <div key={field.id} className="flex items-center gap-4 py-2">
                         <FormField
                         control={form.control}
@@ -259,7 +297,7 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
                             </FormItem>
                         )}
                         />
-                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)} disabled={fields.length <= 1 && form.getValues(`links.${index}.name`) === '' && form.getValues(`links.${index}.url`) === ''}>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => removeLink(index)} disabled={linkFields.length <= 1 && form.getValues(`links.${index}.name`) === '' && form.getValues(`links.${index}.url`) === ''}>
                             <MinusCircle className="text-destructive"/>
                         </Button>
                     </div>
@@ -269,7 +307,7 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
                     variant="outline"
                     size="sm"
                     className="mt-2"
-                    onClick={() => append({ name: '', url: '' })}
+                    onClick={() => appendLink({ name: '', url: '' })}
                 >
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Link

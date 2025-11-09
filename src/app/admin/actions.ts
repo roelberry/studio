@@ -16,9 +16,9 @@ const formSchema = z.object({
   name: z.string().min(2),
   profileImage: z.string().url(),
   statement: z.string().min(10),
-  gallery: z.string().min(1),
+  gallery: z.array(z.object({ url: z.string().url() })).min(1),
   links: z.array(linkSchema).optional(),
-  tags: z.string().min(1),
+  tags: z.array(z.object({ text: z.string().min(1) })).min(1),
 });
 
 export async function addArtist(values: z.infer<typeof formSchema>) {
@@ -31,8 +31,8 @@ export async function addArtist(values: z.infer<typeof formSchema>) {
   const { name, profileImage, statement, gallery, links, tags } = validatedFields.data;
 
   try {
-    const galleryArray = gallery.split(',').map(url => url.trim()).filter(url => url);
-    const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+    const galleryArray = gallery.map(item => item.url);
+    const tagsArray = tags.map(item => item.text);
     
     const validLinks = links ? links.filter(link => link.name && link.url) : [];
 
@@ -68,8 +68,8 @@ export async function updateArtist(id: string, values: z.infer<typeof formSchema
     const docRef = doc(firestore, "artists", id);
 
     try {
-        const galleryArray = gallery.split(',').map(url => url.trim()).filter(url => url);
-        const tagsArray = tags.split(',').map(tag => tag.trim()).filter(tag => tag);
+        const galleryArray = gallery.map(item => item.url);
+        const tagsArray = tags.map(item => item.text);
         const validLinks = links ? links.filter(link => link.name && link.url) : [];
 
         const artistData = {
