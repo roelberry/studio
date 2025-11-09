@@ -63,7 +63,7 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
     });
 
     useEffect(() => {
-      if (!artistId) return;
+      if (!artistId || !firestore) return;
       const fetchArtist = async () => {
         setIsLoading(true);
         const docRef = doc(firestore, 'artists', artistId);
