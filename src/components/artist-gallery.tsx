@@ -103,29 +103,32 @@ export function GallerySkeleton() {
 }
 
 export function ArtistGalleryWrapper({ initialArtists }: { initialArtists: Artist[] }) {
-    const firestore = useFirestore();
+    // This state now correctly defaults to the server-provided artists.
     const [artists, setArtists] = useState<Artist[]>(initialArtists);
+    // isLoading is true if we have no initial artists and are thus waiting for the client-side fetch.
     const [isLoading, setIsLoading] = useState(initialArtists.length === 0);
+    
+    // The useFirestore hook is now guarded and will only be called on the client.
+    const [firestore, setFirestore] = useState<any>(null);
+    const getFirestore = useFirestore;
 
     useEffect(() => {
+        // This effect runs only on the client, safely getting the firestore instance.
+        setFirestore(getFirestore());
+    }, [getFirestore]);
+
+    useEffect(() => {
+      // This effect only runs if firestore has been successfully initialized on the client.
+      if (!firestore) return;
+
       const artistsCollection = collection(firestore, 'artists');
       const unsubscribe = onSnapshot(artistsCollection, (snapshot: QuerySnapshot<DocumentData>) => {
         const firestoreArtists = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Artist));
-        
-        // Combine firestore data with initial sample data, preventing duplicates
-        const combinedArtists = [...firestoreArtists];
-        const firestoreIds = new Set(firestoreArtists.map(a => a.id));
-        initialArtists.forEach(initialArtist => {
-          if (!firestoreIds.has(initialArtist.id)) {
-            combinedArtists.push(initialArtist);
-          }
-        });
-
-        setArtists(combinedArtists);
+        setArtists(firestoreArtists);
         setIsLoading(false);
       }, (error) => {
         console.error("Error fetching artists:", error);
-        // Fallback to initial artists if firestore fails
+        // Fallback to initial artists if firestore fails on the client.
         setArtists(initialArtists);
         setIsLoading(false);
       });
