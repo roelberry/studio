@@ -1,3 +1,58 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "artist-1-profile",
+      "description": "Profile image for Jane Doe",
+      "imageUrl": "https://images.unsplash.com/photo-1631479290037-97d776982ea4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxtdXJhbCUyMGFydHxlbnwwfHx8fDE3NjI2ODA5OTl8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mural art"
+    },
+    {
+      "id": "artist-1-gallery-1",
+      "description": "Gallery image 1 for Jane Doe",
+      "imageUrl": "https://images.unsplash.com/photo-1681403884153-a20de9101205?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8cHJvdGVzdCUyMGFydHxlbnwwfHx8fDE3NjI2ODEwMDB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "protest art"
+    },
+    {
+      "id": "artist-1-gallery-2",
+      "description": "Gallery image 2 for Jane Doe",
+      "imageUrl": "https://images.unsplash.com/photo-1760264567362-5576b9621e16?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxjb21tdW5pdHklMjBtdXJhbHxlbnwwfHx8fDE3NjI2ODEwMDB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "community mural"
+    },
+    {
+      "id": "artist-2-profile",
+      "description": "Profile image for John Smith",
+      "imageUrl": "https://images.unsplash.com/photo-1762532264908-c2984bfbce81?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzY3VscHR1cmUlMjBlbnZpcm9ubWVudHxlbnwwfHx8fDE3NjI2ODEwMDB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "sculpture environment"
+    },
+    {
+      "id": "artist-2-gallery-1",
+      "description": "Gallery image 1 for John Smith",
+      "imageUrl": "https://images.unsplash.com/photo-1693343160069-11dc96b9d7b3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxyZWN5Y2xlZCUyMGFydHxlbnwwfHx8fDE3NjI2ODEwMDB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "recycled art"
+    },
+    {
+      "id": "artist-2-gallery-2",
+      "description": "Gallery image 2 for John Smith",
+      "imageUrl": "https://images.unsplash.com/photo-1637909837540-80e1b9198ea9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxpbnN0YWxsYXRpb24lMjBhcnR8ZW58MHx8fHwxNzYyNjgxMDAwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "installation art"
+    },
+    {
+      "id": "artist-3-profile",
+      "description": "Profile image for Art Collective",
+      "imageUrl": "https://images.unsplash.com/photo-1533106958148-daaeab8b83fe?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxwZXJmb3JtYW5jZSUyMGFydHxlbnwwfHx8fDE3NjI2ODEwMDB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "performance art"
+    },
+    {
+      "id": "artist-3-gallery-1",
+      "description": "Gallery image 1 for Art Collective",
+      "imageUrl": "https://images.unsplash.com/photo-1552250575-e508473b090f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxzdHJlZXQlMjBhcnR8ZW58MHx8fHwxNzYyNjE0ODE5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "street art"
+    },
+    {
+      "id": "artist-3-gallery-2",
+      "description": "Gallery image 2 for Art Collective",
+      "imageUrl": "https://images.unsplash.com/photo-1758599879065-46fd59235166?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8d29ya3Nob3AlMjBjb21tdW5pdHl8ZW58MHx8fHwxNzYyNjgxMDAwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "workshop community"
+    }
+  ]
 }
