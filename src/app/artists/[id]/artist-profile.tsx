@@ -22,7 +22,7 @@ function getIcon(name: string) {
 
 export function ArtistProfile({ artist }: { artist: Artist }) {
   return (
-    <div className="max-w-6xl mx-auto space-y-8">
+    <div className="max-w-6xl mx-auto space-y-12">
       <header className="text-center">
         <h1 className="text-5xl font-headline tracking-tight text-foreground">{artist.name}</h1>
         <div className="mt-4 flex justify-center flex-wrap gap-2">
@@ -32,15 +32,18 @@ export function ArtistProfile({ artist }: { artist: Artist }) {
         </div>
       </header>
       
-      <Card>
-        <CardContent className="p-6">
-          <p className="text-lg text-foreground/80 leading-relaxed">{artist.statement}</p>
-        </CardContent>
-      </Card>
+      <section>
+        <h2 className="text-3xl font-headline mb-4 text-center">Artist Statement</h2>
+        <Card>
+            <CardContent className="p-6">
+                <p className="text-lg text-foreground/80 leading-relaxed">{artist.statement}</p>
+            </CardContent>
+        </Card>
+      </section>
 
-      {artist.gallery.length > 0 && <ArtistGallery artist={artist} />}
+      {artist.gallery && artist.gallery.length > 0 && <ArtistGallery artist={artist} />}
 
-      {artist.links.length > 0 && (
+      {artist.links && artist.links.length > 0 && (
         <section className="text-center">
              <h2 className="text-3xl font-headline mb-4">Connect</h2>
              <div className="flex justify-center items-center gap-4">
