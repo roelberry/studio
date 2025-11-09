@@ -79,13 +79,18 @@ export default function AdminPage() {
 
     useEffect(() => {
       if (!firestore) {
+        setIsLoading(true);
         return;
       }
+      setIsLoading(true);
       const artistsCollection = collection(firestore, 'artists');
       const unsubscribe = onSnapshot(artistsCollection, (snapshot: QuerySnapshot<DocumentData>) => {
         const artistsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Artist));
         setArtists(artistsData);
         setIsLoading(false);
+      }, (error) => {
+          console.error("Error fetching artists:", error);
+          setIsLoading(false);
       });
 
       return () => unsubscribe();
