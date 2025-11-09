@@ -33,7 +33,16 @@
           "type": "array",
           "description": "A list of links to the artist's website, social media, or portfolio.",
           "items": {
-            "type": "string"
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "url": {
+                "type": "string"
+              }
+            },
+            "required": ["name", "url"]
           }
         },
         "tags": {
@@ -53,7 +62,34 @@
         "links",
         "tags"
       ]
-    }
+    },
+    "User": {
+        "$schema": "http://json-schema.org/draft-07/schema#",
+        "title": "User",
+        "type": "object",
+        "description": "Represents a user account in the system.",
+        "properties": {
+          "uid": {
+            "type": "string",
+            "description": "The unique identifier for the user, provided by Firebase Auth."
+          },
+          "email": {
+            "type": "string",
+            "format": "email",
+            "description": "The user's email address."
+          },
+          "displayName": {
+            "type": "string",
+            "description": "The user's display name."
+          },
+          "role": {
+            "type": "string",
+            "description": "The user's role, e.g., 'admin' or 'editor'.",
+            "enum": ["admin"]
+          }
+        },
+        "required": ["uid", "email"]
+      }
   },
   "auth": {
     "providers": [
@@ -75,6 +111,22 @@
             {
               "name": "artistId",
               "description": "Unique identifier for the artist."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/users/{userId}",
+        "definition": {
+          "entityName": "User",
+          "schema": {
+            "$ref": "#/backend/entities/User"
+          },
+          "description": "Stores additional user profile information.",
+          "params": [
+            {
+              "name": "userId",
+              "description": "The user's UID from Firebase Auth."
             }
           ]
         }

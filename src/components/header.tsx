@@ -4,8 +4,10 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { Menu } from 'lucide-react';
-import { useUser } from '@/firebase';
+import { useUser, useAuth } from '@/firebase';
 import { useState } from 'react';
+import { signOut } from 'firebase/auth';
+import { useRouter } from 'next/navigation';
 
 const baseNavLinks = [
   { href: '/', label: 'Home' },
@@ -14,9 +16,18 @@ const baseNavLinks = [
 
 export function AppHeader() {
   const { user, isUserLoading } = useUser();
+  const auth = useAuth();
+  const router = useRouter();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-  const navLinks = user ? [...baseNavLinks, { href: '/admin', label: 'Admin' }] : baseNavLinks;
+  const handleLogout = async () => {
+    await signOut(auth);
+    router.push('/');
+  };
+
+  const navLinks = user
+    ? [...baseNavLinks, { href: '/admin', label: 'Admin' }]
+    : [...baseNavLinks];
 
   const handleLinkClick = () => {
     setIsMobileMenuOpen(false);
@@ -36,6 +47,15 @@ export function AppHeader() {
               <Link href={href}>{label}</Link>
             </Button>
           ))}
+          {!isUserLoading && (
+            user ? (
+              <Button variant="ghost" onClick={handleLogout}>Logout</Button>
+            ) : (
+              <Button variant="ghost" asChild>
+                <Link href="/login">Login</Link>
+              </Button>
+            )
+          )}
         </nav>
 
         {/* Mobile Navigation */}
@@ -60,6 +80,15 @@ export function AppHeader() {
                     <Link href={href} onClick={handleLinkClick}>{label}</Link>
                   </Button>
                 ))}
+                {!isUserLoading && (
+                    user ? (
+                    <Button variant="ghost" onClick={() => { handleLogout(); handleLinkClick(); }} className="justify-start text-lg">Logout</Button>
+                    ) : (
+                    <Button variant="ghost" asChild className="justify-start text-lg">
+                        <Link href="/login" onClick={handleLinkClick}>Login</Link>
+                    </Button>
+                    )
+                )}
               </nav>
             </SheetContent>
           </Sheet>
