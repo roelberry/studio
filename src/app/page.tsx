@@ -1,7 +1,7 @@
-import { Suspense } from 'react';
-import { ArtistGallery, GallerySkeleton } from '@/components/artist-gallery';
 
-export default async function Home() {
+import { ArtistGalleryWrapper } from '@/components/artist-gallery';
+
+export default function Home() {
   return (
     <div className="space-y-8">
       <div className="text-center">
@@ -13,9 +13,7 @@ export default async function Home() {
         </p>
       </div>
       
-      <Suspense fallback={<GallerySkeleton />}>
-        <ArtistGallery />
-      </Suspense>
+      <ArtistGalleryWrapper />
     </div>
   );
 }
