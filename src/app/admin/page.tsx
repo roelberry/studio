@@ -4,7 +4,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { collection, onSnapshot, QuerySnapshot, DocumentData } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Artist } from '@/lib/types';
@@ -40,6 +40,16 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Skeleton } from '@/components/ui/skeleton';
 
+const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
+const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+
+const fileSchema = z.instanceof(File)
+  .refine((file) => file.size <= MAX_FILE_SIZE, `Max file size is 4MB.`)
+  .refine(
+    (file) => ACCEPTED_IMAGE_TYPES.includes(file.type),
+    "Only .jpg, .jpeg, .png and .webp formats are supported."
+  );
+
 const linkSchema = z.object({
     name: z.string().min(1, 'Link name is required.'),
     url: z.string().url('Please enter a valid URL.'),
@@ -47,9 +57,9 @@ const linkSchema = z.object({
 
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
-  profileImage: z.string().url('Please enter a valid URL.'),
+  profileImage: fileSchema,
   statement: z.string().min(10, 'Statement must be at least 10 characters.'),
-  gallery: z.array(z.object({ url: z.string().url() })).min(1, 'Please add at least one gallery image URL.'),
+  gallery: z.array(fileSchema).min(1, 'Please add at least one gallery image.'),
   links: z.array(linkSchema).optional(),
   tags: z.array(z.object({ text: z.string().min(1) })).min(1, 'Please add at least one tag.'),
 });
@@ -60,6 +70,10 @@ export default function AdminPage() {
     const firestore = useFirestore();
     const [artists, setArtists] = useState<Artist[]>([]);
     const [isLoading, setIsLoading] = useState(true);
+    
+    // Refs for file inputs
+    const profileImageRef = useRef<HTMLInputElement>(null);
+    const galleryRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     useEffect(() => {
       const artistsCollection = collection(firestore, 'artists');
@@ -77,12 +91,7 @@ export default function AdminPage() {
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: 'New Artist',
-            profileImage: PlaceHolderImages.find(p => p.id === 'artist-1-profile')?.imageUrl || '',
             statement: 'A brief statement about the artist and their work goes here. This helps visitors understand their mission and style.',
-            gallery: [
-                { url: PlaceHolderImages.find(p => p.id === 'artist-1-gallery-1')?.imageUrl || '' },
-                { url: PlaceHolderImages.find(p => p.id === 'artist-1-gallery-2')?.imageUrl || '' },
-            ],
             links: [{ name: 'Website', url: 'https://example.com' }],
             tags: [{ text: 'Social Justice' }, { text: 'Muralist' }],
         },
@@ -103,7 +112,21 @@ export default function AdminPage() {
 
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
-        const result = await addArtist(values);
+        const formData = new FormData();
+        formData.append('name', values.name);
+        formData.append('statement', values.statement);
+        formData.append('profileImage', values.profileImage);
+        
+        values.gallery.forEach((file) => {
+            formData.append('gallery', file);
+        });
+        
+        if (values.links) {
+            formData.append('links', JSON.stringify(values.links));
+        }
+        formData.append('tags', JSON.stringify(values.tags));
+
+        const result = await addArtist(formData);
         
         if (result.success) {
             toast({
@@ -163,11 +186,21 @@ export default function AdminPage() {
               <FormField
                 control={form.control}
                 name="profileImage"
-                render={({ field }) => (
+                render={({ field: { onChange, value, ...rest } }) => (
                   <FormItem>
-                    <FormLabel>Profile Image URL</FormLabel>
+                    <FormLabel>Profile Image</FormLabel>
                     <FormControl>
-                      <Input placeholder="https://example.com/image.jpg" {...field} />
+                      <Input 
+                        type="file" 
+                        accept="image/*"
+                        onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                                onChange(file);
+                            }
+                        }}
+                        {...rest}
+                      />
                     </FormControl>
                     <FormDescription>The main image for the artist card.</FormDescription>
                     <FormMessage />
@@ -189,17 +222,27 @@ export default function AdminPage() {
               />
               
               <div>
-                <FormLabel>Gallery Image URLs</FormLabel>
-                <FormDescription className="mb-4">Add URLs for the artist's gallery.</FormDescription>
+                <FormLabel>Gallery Images</FormLabel>
+                <FormDescription className="mb-4">Add images for the artist's gallery.</FormDescription>
                 {galleryFields.map((field, index) => (
                   <div key={field.id} className="flex items-center gap-4 py-2">
                     <FormField
                       control={form.control}
-                      name={`gallery.${index}.url`}
-                      render={({ field }) => (
+                      name={`gallery.${index}`}
+                      render={({ field: { onChange, value, ...rest } }) => (
                         <FormItem className="flex-1">
                           <FormControl>
-                            <Input placeholder="https://example.com/gallery-image.jpg" {...field} />
+                             <Input 
+                                type="file" 
+                                accept="image/*"
+                                onChange={(e) => {
+                                    const file = e.target.files?.[0];
+                                    if (file) {
+                                        onChange(file);
+                                    }
+                                }}
+                                {...rest}
+                              />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -210,9 +253,9 @@ export default function AdminPage() {
                     </Button>
                   </div>
                 ))}
-                <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendGallery({ url: '' })}>
+                <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendGallery(new File([], ""))}>
                   <PlusCircle className="mr-2 h-4 w-4" />
-                  Add Image URL
+                  Add Image
                 </Button>
                  <FormMessage>{form.formState.errors.gallery?.message}</FormMessage>
               </div>

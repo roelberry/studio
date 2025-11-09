@@ -34,6 +34,8 @@ const linkSchema = z.object({
     url: z.string().url('Please enter a valid URL.'),
 });
 
+// The form schema for editing will still rely on URLs for now.
+// We will update this to handle file uploads in a subsequent step.
 const formSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters.'),
   profileImage: z.string().url('Please enter a valid URL.'),
@@ -106,21 +108,27 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
     });
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
-        const result = await updateArtist(artistId, values);
+        toast({
+            variant: "destructive",
+            title: "Functionality Not Implemented",
+            description: "Editing artists with file uploads is not yet complete.",
+        });
+        // This will be implemented in the next step.
+        // const result = await updateArtist(artistId, values);
         
-        if (result.success) {
-            toast({
-                title: "Success!",
-                description: `Artist "${values.name}" has been updated.`,
-            })
-            router.push('/admin');
-        } else {
-            toast({
-                variant: "destructive",
-                title: "Uh oh! Something went wrong.",
-                description: result.error || "There was a problem with your request.",
-            })
-        }
+        // if (result.success) {
+        //     toast({
+        //         title: "Success!",
+        //         description: `Artist "${values.name}" has been updated.`,
+        //     })
+        //     router.push('/admin');
+        // } else {
+        //     toast({
+        //         variant: "destructive",
+        //         title: "Uh oh! Something went wrong.",
+        //         description: result.error || "There was a problem with your request.",
+        //     })
+        // }
     }
 
   if (isLoading) {
@@ -164,7 +172,7 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
       <Card>
         <CardHeader>
           <CardTitle className="text-3xl font-headline">Edit Artist</CardTitle>
-          <CardDescription>Update the details for {form.getValues('name')}.</CardDescription>
+          <CardDescription>Update the details for {form.getValues('name')}. (Image uploads disabled for edits)</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -191,7 +199,7 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
                     <FormControl>
                       <Input placeholder="https://example.com/image.jpg" {...field} />
                     </FormControl>
-                    <FormDescription>The main image for the artist card.</FormDescription>
+                    <FormDescription>The main image for the artist card. (Editing images is not yet supported)</FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -212,7 +220,7 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
 
               <div>
                 <FormLabel>Gallery Image URLs</FormLabel>
-                <FormDescription className="mb-4">Add URLs for the artist's gallery.</FormDescription>
+                <FormDescription className="mb-4">Add URLs for the artist's gallery. (Editing images is not yet supported)</FormDescription>
                 {galleryFields.map((field, index) => (
                   <div key={field.id} className="flex items-center gap-4 py-2">
                     <FormField

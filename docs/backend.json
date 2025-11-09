@@ -16,7 +16,8 @@
         },
         "profileImage": {
           "type": "string",
-          "description": "URL to the main image for the artist's card in the gallery."
+          "format": "uri",
+          "description": "URL to the main image for the artist's card in the gallery, hosted on Firebase Storage."
         },
         "statement": {
           "type": "string",
@@ -24,9 +25,10 @@
         },
         "gallery": {
           "type": "array",
-          "description": "A list of image URLs for the artist's profile gallery.",
+          "description": "A list of image URLs for the artist's profile gallery, hosted on Firebase Storage.",
           "items": {
-            "type": "string"
+            "type": "string",
+            "format": "uri"
           }
         },
         "links": {
@@ -39,7 +41,8 @@
                 "type": "string"
               },
               "url": {
-                "type": "string"
+                "type": "string",
+                "format": "uri"
               }
             },
             "required": ["name", "url"]
@@ -133,5 +136,8 @@
       }
     ],
     "reasoning": "The Firestore structure is designed to directly reflect the application's data model, focusing on simplicity and ease of querying. The `artists` collection stores all artist data, enabling straightforward retrieval and display for the gallery and profile pages. Since the application has a limited scope (a class project) and doesn't involve complex user roles or collaborative features, authorization independence is maintained implicitly. All data is effectively public (accessible to anyone visiting the site) or restricted to admin users through manual Firebase console management. Therefore, no denormalization is required. The structure supports QAPs by allowing direct listing of artists and retrieval of individual artist profiles without complex filtering or authorization checks at the rule level."
+  },
+  "storage": {
+    "rules": "storage.rules"
   }
 }
