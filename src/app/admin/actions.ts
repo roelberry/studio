@@ -12,10 +12,6 @@ const { firestore, storage } = initializeFirebase();
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
-// This server-side schema focuses on presence, not file-specifics,
-// as those are best validated on the client.
-// REMOVED ZOD SCHEMA causing server crash. Validation is now manual.
-
 async function uploadImage(file: File, artistName: string): Promise<string> {
     const sanitizedName = artistName.replace(/[^a-zA-Z0-9]/g, '-').toLowerCase();
     const fileName = `${sanitizedName}-${Date.now()}-${file.name}`;
@@ -82,30 +78,19 @@ export async function addArtist(formData: FormData) {
   }
 }
 
-const updateFormSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters.'),
-  statement: z.string().min(10, 'Statement must be at least 10 characters.'),
-  links: z.string().optional(),
-  tags: z.string().optional(),
-});
-
-
 export async function updateArtist(id: string, formData: FormData, existingArtist: Artist) {
-  const rawFormData = {
-    name: formData.get('name'),
-    statement: formData.get('statement'),
-    links: formData.get('links'),
-    tags: formData.get('tags'),
-  };
+  const name = formData.get('name') as string;
+  const statement = formData.get('statement') as string;
+  const links = formData.get('links') as string | null;
+  const tags = formData.get('tags') as string | null;
 
-  const validatedFields = updateFormSchema.safeParse(rawFormData);
-
-  if (!validatedFields.success) {
-    return { success: false, error: 'Invalid fields provided.' };
+  if (!name || name.length < 2) {
+    return { success: false, error: 'Name must be at least 2 characters.' };
+  }
+  if (!statement || statement.length < 10) {
+    return { success: false, error: 'Statement must be at least 10 characters.' };
   }
   
-  const { name, statement, links, tags } = validatedFields.data;
-
   try {
     const artistDocRef = doc(firestore, "artists", id);
     const updatedData: Partial<Artist> = {
