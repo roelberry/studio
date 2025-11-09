@@ -13,20 +13,20 @@ export function ArtistGallery({ artist }: { artist: Artist }) {
             <CarouselContent>
               {artist.gallery.map((imgUrl, index) => (
                 <CarouselItem key={index}>
-                  <Card className="overflow-hidden">
-                    <CardContent className="p-0">
-                      <div className="aspect-video relative">
-                         <Image
-                            src={imgUrl}
-                            alt={`${artist.name}'s work ${index + 1}`}
-                            fill
-                            className="object-contain"
-                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                            data-ai-hint="artwork installation"
-                          />
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <div className="p-1">
+                    <Card className="overflow-hidden">
+                        <CardContent className="p-0 aspect-video relative">
+                            <Image
+                                src={imgUrl}
+                                alt={`${artist.name}'s work ${index + 1}`}
+                                fill
+                                className="object-contain"
+                                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                                data-ai-hint="artwork installation"
+                            />
+                        </CardContent>
+                    </Card>
+                  </div>
                 </CarouselItem>
               ))}
             </CarouselContent>
