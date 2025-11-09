@@ -3,11 +3,12 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import * as z from 'zod';
-import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-import { collection, onSnapshot, QuerySnapshot, DocumentData } from 'firebase/firestore';
+import { useRouter } from 'next/navigation';
+import { doc, getDoc } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Artist } from '@/lib/types';
+
 
 import { Button } from '@/components/ui/button';
 import {
@@ -23,20 +24,9 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast"
-import { addArtist, deleteArtist } from './actions';
-import { PlusCircle, MinusCircle, Trash2, Edit } from 'lucide-react';
+import { updateArtist } from '../../actions';
+import { PlusCircle, MinusCircle } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
 import { Skeleton } from '@/components/ui/skeleton';
 
 const linkSchema = z.object({
@@ -53,24 +43,12 @@ const formSchema = z.object({
   tags: z.string().min(1, 'Please add at least one tag.'),
 });
 
-export default function AdminPage() {
+export default function EditArtistPage({ params }: { params: { id: string } }) {
     const { toast } = useToast();
     const router = useRouter();
     const firestore = useFirestore();
-    const [artists, setArtists] = useState<Artist[]>([]);
+    const artistId = params.id;
     const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-      const artistsCollection = collection(firestore, 'artists');
-      const unsubscribe = onSnapshot(artistsCollection, (snapshot: QuerySnapshot<DocumentData>) => {
-        const artistsData = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Artist));
-        setArtists(artistsData);
-        setIsLoading(false);
-      });
-
-      return () => unsubscribe();
-    }, [firestore]);
-
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -84,20 +62,50 @@ export default function AdminPage() {
         },
     });
 
+    useEffect(() => {
+      if (!artistId) return;
+      const fetchArtist = async () => {
+        setIsLoading(true);
+        const docRef = doc(firestore, 'artists', artistId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const artist = docSnap.data() as Omit<Artist, 'id'>;
+          form.reset({
+            name: artist.name,
+            profileImage: artist.profileImage,
+            statement: artist.statement,
+            gallery: artist.gallery.join(', '),
+            links: artist.links.length > 0 ? artist.links : [{ name: '', url: '' }],
+            tags: artist.tags.join(', '),
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Not Found",
+            description: "No artist found with this ID.",
+          });
+          router.push('/admin');
+        }
+        setIsLoading(false);
+      };
+      fetchArtist();
+    }, [artistId, firestore, form, router, toast]);
+
     const { fields, append, remove } = useFieldArray({
         control: form.control,
         name: "links"
     });
 
     async function onSubmit(values: z.infer<typeof formSchema>) {
-        const result = await addArtist(values);
+        const result = await updateArtist(artistId, values);
         
         if (result.success) {
             toast({
                 title: "Success!",
-                description: `Artist "${values.name}" has been added.`,
+                description: `Artist "${values.name}" has been updated.`,
             })
-            form.reset();
+            router.push('/admin');
         } else {
             toast({
                 variant: "destructive",
@@ -107,29 +115,48 @@ export default function AdminPage() {
         }
     }
 
-    async function handleDelete(artistId: string, artistName: string) {
-      const result = await deleteArtist(artistId);
-      if (result.success) {
-        toast({
-          title: "Artist Deleted",
-          description: `"${artistName}" has been removed from the directory.`
-        });
-      } else {
-        toast({
-          variant: "destructive",
-          title: "Deletion Failed",
-          description: result.error || "Could not remove the artist."
-        });
-      }
-    }
-
+  if (isLoading) {
+    return (
+        <div className="max-w-4xl mx-auto">
+            <Card>
+                <CardHeader>
+                    <Skeleton className="h-9 w-1/2" />
+                    <Skeleton className="h-5 w-3/4" />
+                </CardHeader>
+                <CardContent className="space-y-8">
+                    <div className="space-y-2">
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                    <div className="space-y-2">
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-24 w-full" />
+                    </div>
+                     <div className="space-y-2">
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-20 w-full" />
+                    </div>
+                     <div className="space-y-2">
+                        <Skeleton className="h-5 w-32" />
+                        <Skeleton className="h-10 w-full" />
+                    </div>
+                    <Skeleton className="h-10 w-32" />
+                </CardContent>
+            </Card>
+        </div>
+    )
+  }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto">
       <Card>
         <CardHeader>
-          <CardTitle className="text-3xl font-headline">Add New Artist</CardTitle>
-          <CardDescription>This form adds a new artist to the Firestore database.</CardDescription>
+          <CardTitle className="text-3xl font-headline">Edit Artist</CardTitle>
+          <CardDescription>Update the details for {form.getValues('name')}.</CardDescription>
         </CardHeader>
         <CardContent>
           <Form {...form}>
@@ -251,63 +278,16 @@ export default function AdminPage() {
 
               <Separator />
 
-              <Button type="submit" disabled={form.formState.isSubmitting}>
-                {form.formState.isSubmitting ? 'Submitting...' : 'Submit Artist'}
-              </Button>
+              <div className="flex gap-4">
+                <Button type="submit" disabled={form.formState.isSubmitting}>
+                    {form.formState.isSubmitting ? 'Updating...' : 'Update Artist'}
+                </Button>
+                <Button type="button" variant="outline" onClick={() => router.push('/admin')}>
+                    Cancel
+                </Button>
+              </div>
             </form>
           </Form>
-        </CardContent>
-      </Card>
-      
-      <Separator />
-
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-3xl font-headline">Manage Artists</CardTitle>
-          <CardDescription>Edit or delete existing artists in the directory.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isLoading ? (
-            <div className="space-y-4">
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          ) : (
-          <div className="space-y-2">
-            {artists.map(artist => (
-              <div key={artist.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-muted">
-                <span className="font-medium">{artist.name}</span>
-                <div className="flex items-center gap-2">
-                  <Button variant="outline" size="icon" onClick={() => router.push(`/admin/edit/${artist.id}`)}>
-                    <Edit className="h-4 w-4" />
-                    <span className="sr-only">Edit</span>
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="destructive" size="icon">
-                        <Trash2 className="h-4 w-4" />
-                        <span className="sr-only">Delete</span>
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete the artist "{artist.name}" from the directory.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction onClick={() => handleDelete(artist.id, artist.name)}>Continue</AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                </div>
-              </div>
-            ))}
-          </div>
-          )}
         </CardContent>
       </Card>
     </div>
