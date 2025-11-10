@@ -78,7 +78,8 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
     });
 
     useEffect(() => {
-      if (!artistId) return;
+      if (!artistId || !firestore) return;
+      
       const fetchArtist = async () => {
         setIsLoading(true);
         const docRef = doc(firestore, 'artists', artistId);
@@ -377,7 +378,7 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
                             </FormItem>
                         )}
                         />
-                        <Button type="button" variant="ghost" size="icon" onClick={() => removeLink(index)} disabled={linkFields.length <= 1 && form.getValues(`links.${index}.name`) === '' && form.getValues(`links.${index}.url`) === ''}>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => removeLink(index)} disabled={linkFields.length <= 1}>
                             <MinusCircle className="text-destructive"/>
                         </Button>
                     </div>
