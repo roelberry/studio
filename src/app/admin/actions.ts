@@ -8,12 +8,6 @@ import { initializeFirebase } from '@/firebase/index.server';
 import { revalidatePath } from 'next/cache';
 import type { Artist } from '@/lib/types';
 
-import { getFirestore } from 'firebase-admin/firestore';
-import { getStorage } from 'firebase-admin/storage';
-import { initializeFirebase } from '@/firebase/index.server';
-import { revalidatePath } from 'next/cache';
-import type { Artist } from '@/lib/types';
-
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
