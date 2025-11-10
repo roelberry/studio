@@ -56,7 +56,11 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [services, setServices] = useState<FirebaseServices | null>(null);
-  const [userAuthState, setUserAuthState] = useState({
+  const [userAuthState, setUserAuthState] = useState<{
+    user: User | null;
+    isUserLoading: boolean;
+    userError: Error | null;
+  }>({
     user: null,
     isUserLoading: true,
     userError: null,
@@ -109,7 +113,7 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({
 
   return (
     <FirebaseContext.Provider value={contextValue}>
-      {services ? (
+      {contextValue.firestore && contextValue.auth ? (
           <>
             <FirebaseErrorListener />
             {children}
@@ -131,7 +135,8 @@ export const useFirebase = (): FirebaseServicesAndUser => {
   }
 
   if (!context.areServicesAvailable || !context.firebaseApp || !context.firestore || !context.auth || !context.storage) {
-    throw new Error('Firebase core services not available. Check FirebaseProvider props.');
+    // This error should theoretically not be hit if the provider correctly waits.
+    throw new Error('Firebase core services not available. Check FirebaseProvider setup.');
   }
 
   return {

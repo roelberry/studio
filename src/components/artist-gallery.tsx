@@ -108,6 +108,12 @@ export function ArtistGalleryWrapper({ initialArtists }: { initialArtists: Artis
     const firestore = useFirestore();
 
     useEffect(() => {
+        // Wait until firestore instance is available.
+        if (!firestore) {
+            setIsLoading(true);
+            return;
+        };
+
         setIsLoading(true);
         const artistsCollection = collection(firestore, 'artists');
         const unsubscribe = onSnapshot(artistsCollection, (snapshot: QuerySnapshot<DocumentData>) => {
