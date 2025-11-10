@@ -108,14 +108,6 @@ export function ArtistGalleryWrapper({ initialArtists }: { initialArtists: Artis
     const firestore = useFirestore();
 
     useEffect(() => {
-        // Wait until firestore is available.
-        if (!firestore) {
-          // We still show initial artists, but loading is true until we connect to Firestore.
-          setIsLoading(initialArtists.length === 0);
-          return;
-        }
-
-        // We have a firestore instance, so we are loading live data.
         setIsLoading(true);
         const artistsCollection = collection(firestore, 'artists');
         const unsubscribe = onSnapshot(artistsCollection, (snapshot: QuerySnapshot<DocumentData>) => {

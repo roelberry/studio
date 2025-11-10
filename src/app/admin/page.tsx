@@ -78,10 +78,6 @@ export default function AdminPage() {
     const galleryRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     useEffect(() => {
-      if (!firestore) {
-        setIsLoading(true);
-        return;
-      }
       setIsLoading(true);
       const artistsCollection = collection(firestore, 'artists');
       const unsubscribe = onSnapshot(artistsCollection, (snapshot: QuerySnapshot<DocumentData>) => {
