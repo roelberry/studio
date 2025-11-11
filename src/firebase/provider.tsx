@@ -113,7 +113,7 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({
 
   return (
     <FirebaseContext.Provider value={contextValue}>
-      {contextValue.firestore && contextValue.auth ? (
+      {contextValue.areServicesAvailable ? (
           <>
             <FirebaseErrorListener />
             {children}
