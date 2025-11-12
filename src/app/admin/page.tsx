@@ -78,7 +78,6 @@ export default function AdminPage() {
     const galleryRefs = useRef<(HTMLInputElement | null)[]>([]);
 
     useEffect(() => {
-      // Wait until firestore instance is available.
       if (!firestore) {
         setIsLoading(true);
         return;
@@ -437,3 +436,5 @@ export default function AdminPage() {
     </div>
   );
 }
+
+    

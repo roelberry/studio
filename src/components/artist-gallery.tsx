@@ -108,7 +108,6 @@ export function ArtistGalleryWrapper({ initialArtists }: { initialArtists: Artis
     const firestore = useFirestore();
 
     useEffect(() => {
-        // Wait until firestore instance is available.
         if (!firestore) {
             setIsLoading(true);
             return;
@@ -152,3 +151,5 @@ export function ArtistGalleryWrapper({ initialArtists }: { initialArtists: Artis
     
     return <ArtistGallery artists={artists} allTags={allTags} />;
 }
+
+    

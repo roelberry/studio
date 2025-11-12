@@ -1,6 +1,7 @@
 
 import 'server-only';
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
+// Use the correct Firestore functions from the Admin SDK
+import { getFirestore } from 'firebase-admin/firestore';
 import { initializeFirebase } from '@/firebase/index.server';
 import type { Artist } from './types';
 
@@ -9,13 +10,15 @@ import type { Artist } from './types';
 // Initializing it at the top level of the module can cause conflicts.
 
 export async function getArtists(): Promise<Artist[]> {
+  // The firestore instance here is from the Admin SDK
   const { firestore } = initializeFirebase();
-  const artistsCollection = collection(firestore, 'artists');
+  const artistsCollection = firestore.collection('artists');
   try {
-    const snapshot = await getDocs(artistsCollection);
+    const snapshot = await artistsCollection.get();
     if (snapshot.empty) {
       return []; // Return empty array if Firestore is empty
     }
+    // Use the admin SDK's way of accessing doc data
     const firestoreArtists = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Artist));
     return firestoreArtists;
   } catch (error) {
@@ -26,11 +29,11 @@ export async function getArtists(): Promise<Artist[]> {
 
 export async function getArtistById(id: string): Promise<Artist | undefined> {
   const { firestore } = initializeFirebase();
-  const docRef = doc(firestore, 'artists', id);
+  const docRef = firestore.doc(`artists/${id}`);
   try {
-    const docSnap = await getDoc(docRef);
+    const docSnap = await docRef.get();
 
-    if (docSnap.exists()) {
+    if (docSnap.exists) {
       return { id: docSnap.id, ...docSnap.data() } as Artist;
     } else {
       return undefined;

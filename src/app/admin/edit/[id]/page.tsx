@@ -78,7 +78,10 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
     });
 
     useEffect(() => {
-      if (!artistId || !firestore) return;
+      if (!artistId || !firestore) {
+        setIsLoading(true);
+        return;
+      }
       
       const fetchArtist = async () => {
         setIsLoading(true);

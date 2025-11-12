@@ -111,14 +111,15 @@ export const FirebaseProvider: React.FC<{ children: ReactNode }> = ({
     };
   }, [services, userAuthState]);
 
+  // Render children only when services are available.
+  if (!contextValue.areServicesAvailable) {
+    return null;
+  }
+
   return (
     <FirebaseContext.Provider value={contextValue}>
-      {contextValue.areServicesAvailable ? (
-          <>
-            <FirebaseErrorListener />
-            {children}
-          </>
-      ) : null}
+      <FirebaseErrorListener />
+      {children}
     </FirebaseContext.Provider>
   );
 };
@@ -194,3 +195,5 @@ export const useUser = (): UserHookResult => {
   const { user, isUserLoading, userError } = useFirebase();
   return { user, isUserLoading, userError };
 };
+
+    
