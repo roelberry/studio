@@ -6,7 +6,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { FirebaseClientProvider } from '@/firebase';
 
 export const metadata: Metadata = {
-  title: 'Indiana Arctivist Directory',
+  title: 'Indiana Art Activist Directory',
   description: 'A directory of art activists in Indiana.',
 };
 

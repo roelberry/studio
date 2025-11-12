@@ -2,7 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'About | Indiana Arctivist Directory',
+  title: 'About | Indiana Art Activist Directory',
 };
 
 export default function AboutPage() {
@@ -14,7 +14,7 @@ export default function AboutPage() {
         </CardHeader>
         <CardContent className="space-y-6 text-lg text-foreground/80">
           <p>
-            The Indiana Arctivist Directory is a curated, shareable webpage designed to showcase and promote Indiana-based art activists.
+            The Indiana Art Activist Directory is a curated, shareable webpage designed to showcase and promote Indiana-based art activists.
           </p>
           <blockquote className="border-l-4 border-primary pl-4 italic text-foreground">
             Our mission is to inspire others with a compilation of local artists who are raising awareness and encouraging social, political, and environmental change.

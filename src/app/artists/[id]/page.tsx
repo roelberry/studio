@@ -15,7 +15,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     };
   }
   return {
-    title: `${artist.name} | Indiana Arctivist Directory`,
+    title: `${artist.name} | Indiana Art Activist Directory`,
     description: artist.statement.substring(0, 160),
   };
 }
