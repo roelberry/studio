@@ -33,39 +33,88 @@ import { Skeleton } from '@/components/ui/skeleton';
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
-type PageProps = {
-  params: { [key: string]: string | string[] | undefined }
-  searchParams: { [key: string]: string | string[] | undefined }
-}
-
-
 const fileSchema = z.instanceof(File)
+
   .optional()
+
   .refine((file) => !file || file.size <= MAX_FILE_SIZE, `Max file size is 4MB.`)
+
   .refine(
+
     (file) => !file || ACCEPTED_IMAGE_TYPES.includes(file.type),
+
     "Only .jpg, .jpeg, .png and .webp formats are supported."
+
   );
 
+
+
 const linkSchema = z.object({
+
     name: z.string().min(1, 'Link name is required.'),
+
     url: z.string().url('Please enter a valid URL.'),
+
 });
+
+
 
 const formSchema = z.object({
+
+
+
   name: z.string().min(2, 'Name must be at least 2 characters.'),
+
+
+
   statement: z.string().min(10, 'Statement must be at least 10 characters.'),
+
+
+
   profileImage: fileSchema,
+
+
+
   existingGalleryUrls: z.array(z.string().url()),
+
+
+
   newGalleryImages: z.array(fileSchema),
+
+
+
   links: z.array(linkSchema).optional(),
+
+
+
   tags: z.array(z.object({ text: z.string().min(1) })).min(1, 'Please add at least one tag.'),
+
+
+
 });
 
 
-export default function EditArtistPage({ params }: PageProps) {
+
+
+
+
+
+
+
+
+
+export default function EditArtistPage({ params }: { params: { id: string } }) {
+
+
+
     const { toast } = useToast();
+
+
+
     const router = useRouter();
+
+
+
     const firestore = useFirestore();
     const artistId = params.id as string;
     const [artist, setArtist] = useState<Artist | null>(null);
