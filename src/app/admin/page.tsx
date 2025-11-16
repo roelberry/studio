@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import * as z from 'zod';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, type MutableRefObject } from 'react';
 import { collection, onSnapshot, QuerySnapshot, DocumentData } from 'firebase/firestore';
 import { useFirestore } from '@/firebase';
 import type { Artist } from '@/lib/types';
@@ -66,6 +66,8 @@ const formSchema = z.object({
   tags: z.array(z.object({ text: z.string().min(1) })).min(1, 'Please add at least one tag.'),
 });
 
+type FormValues = z.infer<typeof formSchema>;
+
 export default function AdminPage() {
     const { toast } = useToast();
     const router = useRouter();
@@ -97,7 +99,7 @@ export default function AdminPage() {
     }, [firestore]);
 
 
-    const form = useForm<z.infer<typeof formSchema>>({
+    const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: '',
@@ -107,15 +109,15 @@ export default function AdminPage() {
         },
     });
 
-    const { fields: linkFields, append: appendLink, remove: removeLink } = useFieldArray({
+    const { fields: linkFields, append: appendLink, remove: removeLink } = useFieldArray<FormValues>({
         control: form.control,
         name: "links"
     });
      const { fields: galleryFields, append: appendGallery, remove: removeGallery } = useFieldArray({
         control: form.control,
-        name: "gallery"
-    });
-    const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({
+        name: "gallery",
+    } as any);
+    const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray<FormValues>({
         control: form.control,
         name: "tags"
     });
@@ -221,14 +223,17 @@ export default function AdminPage() {
               <FormField
                 control={form.control}
                 name="profileImage"
-                render={({ field: { onChange, value, ...rest } }) => (
+                 render={({ field: { onChange, value, ref, ...rest } }) => (
                   <FormItem>
                     <FormLabel>Profile Image</FormLabel>
                     <FormControl>
-                      <Input 
-                        type="file" 
+                      <Input
+                        type="file"
                         accept="image/*"
-                        ref={profileImageRef}
+                        ref={(node) => {
+                          ref(node);
+                          (profileImageRef as MutableRefObject<HTMLInputElement | null>).current = node;
+                        }}
                         onChange={(e) => {
                             const file = e.target.files?.[0];
                             if (file) {
@@ -265,17 +270,20 @@ export default function AdminPage() {
                     <FormField
                       control={form.control}
                       name={`gallery.${index}`}
-                      render={({ field: { onChange, value, ...rest } }) => (
-                        <FormItem className="flex-1">
-                          <FormControl>
-                             <Input 
-                                type="file" 
-                                accept="image/*"
-                                ref={(el) => (galleryRefs.current[index] = el)}
-                                onChange={(e) => {
-                                    const file = e.target.files?.[0];
-                                    if (file) {
-                                        onChange(file);
+                       render={({ field: { onChange, value, ref, ...rest } }) => (
+                          <FormItem className="flex-1">
+                            <FormControl>
+                               <Input
+                                  type="file"
+                                  accept="image/*"
+                                  ref={(el) => {
+                                    ref(el);
+                                    (galleryRefs as MutableRefObject<(HTMLInputElement | null)[]>).current[index] = el;
+                                  }}
+                                  onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      if (file) {
+                                          onChange(file);
                                     }
                                 }}
                                 {...rest}

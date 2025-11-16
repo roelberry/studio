@@ -3,7 +3,8 @@
 
 import { z } from 'zod';
 import { getFirestore } from 'firebase-admin/firestore';
-import { getStorage, type Bucket } from 'firebase-admin/storage';
+import { getStorage } from 'firebase-admin/storage';
+import type { Bucket } from '@google-cloud/storage';
 import { initializeFirebase } from '@/firebase/index.server';
 import { revalidatePath } from 'next/cache';
 import type { Artist } from '@/lib/types';
