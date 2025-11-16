@@ -25,7 +25,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast"
-import { addArtist, deleteArtist } from './actions';
 import { PlusCircle, MinusCircle, Trash2, Edit } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -142,56 +141,80 @@ export default function AdminPage() {
           formData.append('tags', JSON.stringify(values.tags));
         }
 
-        const result = await addArtist(formData);
-        
-        if (result.success) {
-            toast({
-                title: "Success!",
-                description: `Artist "${values.name}" has been added.`,
-            })
-            form.reset();
-             // Reset file inputs
-            if (profileImageRef.current) {
-                profileImageRef.current.value = '';
-            }
-            galleryRefs.current.forEach(ref => {
-                if (ref) ref.value = '';
-            });
-            // Reset field arrays
-            form.reset({
-                name: '',
-                statement: '',
-                links: [{ name: '', url: '' }],
-                tags: [{ text: '' }],
-                gallery: [],
-                profileImage: undefined,
-            });
-            appendGallery(new File([], ""));
-            appendTag({text: ''});
-            appendLink({name: '', url: ''});
+        try {
+          const response = await fetch('/api/admin/artists', {
+            method: 'POST',
+            body: formData,
+          });
+          const result = await response.json();
+
+          if (result.success) {
+              toast({
+                  title: "Success!",
+                  description: `Artist "${values.name}" has been added.`,
+              })
+              form.reset();
+               // Reset file inputs
+              if (profileImageRef.current) {
+                  profileImageRef.current.value = '';
+              }
+              galleryRefs.current.forEach(ref => {
+                  if (ref) ref.value = '';
+              });
+              // Reset field arrays
+              form.reset({
+                  name: '',
+                  statement: '',
+                  links: [{ name: '', url: '' }],
+                  tags: [{ text: '' }],
+                  gallery: [],
+                  profileImage: undefined,
+              });
+              appendGallery(new File([], ""));
+              appendTag({text: ''});
+              appendLink({name: '', url: ''});
 
 
-        } else {
-            toast({
-                variant: "destructive",
-                title: "Uh oh! Something went wrong.",
-                description: result.error || "There was a problem with your request.",
-            })
+          } else {
+              toast({
+                  variant: "destructive",
+                  title: "Uh oh! Something went wrong.",
+                  description: result.error || "There was a problem with your request.",
+              })
+          }
+        } catch (error) {
+          toast({
+            variant: "destructive",
+            title: "Network Error",
+            description: "Could not submit the artist. Please try again.",
+          })
         }
     }
 
     async function handleDelete(artistId: string, artistName: string) {
-      const result = await deleteArtist(artistId);
-      if (result.success) {
-        toast({
-          title: "Artist Deleted",
-          description: `"${artistName}" has been removed from the directory.`
+      try {
+        const response = await fetch(`/api/admin/artists/${artistId}`, {
+          method: 'DELETE',
         });
-      } else {
+        const result = await response.json();
+
+        if (result.success) {
+          toast({
+            title: "Artist Deleted",
+            description: `"${artistName}" has been removed from the directory.`
+          });
+        } else {
+          toast({
+            variant: "destructive",
+            title: "Deletion Failed",
+            description: result.error || "Could not remove the artist."
+          });
+        }
+      } catch (error) {
         toast({
           variant: "destructive",
           title: "Deletion Failed",
-          description: result.error || "Could not remove the artist."
+          description: "Unexpected error deleting the artist."
         });
       }
     }

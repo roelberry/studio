@@ -25,7 +25,6 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from "@/hooks/use-toast"
-import { updateArtist } from '../../actions';
 import { PlusCircle, MinusCircle, X } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -212,20 +211,33 @@ export default function EditArtistPage({ params }: { params: Promise<{ id: strin
         }
         formData.append('tags', JSON.stringify(values.tags));
 
-        const result = await updateArtist(artistId, formData, artist);
-        
-        if (result.success) {
-            toast({
-                title: "Success!",
-                description: `Artist "${values.name}" has been updated.`,
-            })
-            router.push('/admin');
-        } else {
-            toast({
-                variant: "destructive",
-                title: "Uh oh! Something went wrong.",
-                description: result.error || "There was a problem with your request.",
-            })
+        try {
+          const response = await fetch(`/api/admin/artists/${artistId}`, {
+            method: 'PUT',
+            body: formData,
+          });
+
+          const result = await response.json();
+
+          if (result.success) {
+              toast({
+                  title: "Success!",
+                  description: `Artist \"${values.name}\" has been updated.`,
+              })
+              router.push('/admin');
+          } else {
+              toast({
+                  variant: "destructive",
+                  title: "Uh oh! Something went wrong.",
+                  description: result.error || "There was a problem with your request.",
+              })
+          }
+        } catch (error) {
+          toast({
+            variant: "destructive",
+            title: "Network Error",
+            description: "Could not update the artist. Please try again.",
+          })
         }
     }
 
