@@ -33,6 +33,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 const MAX_FILE_SIZE = 4 * 1024 * 1024; // 4MB
 const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
 
+type PageProps = {
+  params: { [key: string]: string | string[] | undefined }
+  searchParams: { [key: string]: string | string[] | undefined }
+}
+
 
 const fileSchema = z.instanceof(File)
   .optional()
@@ -57,11 +62,12 @@ const formSchema = z.object({
   tags: z.array(z.object({ text: z.string().min(1) })).min(1, 'Please add at least one tag.'),
 });
 
-export default function EditArtistPage({ params }: { params: { id: string } }) {
+
+export default function EditArtistPage({ params }: PageProps) {
     const { toast } = useToast();
     const router = useRouter();
     const firestore = useFirestore();
-    const artistId = params.id;
+    const artistId = params.id as string;
     const [artist, setArtist] = useState<Artist | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
@@ -415,5 +421,3 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
     </div>
   );
 }
-
-    
