@@ -4,11 +4,12 @@ import type { Metadata } from 'next';
 import { ArtistProfile } from './artist-profile';
 
 type Props = {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const artist = await getArtistById(params.id);
+  const { id } = await params;
+  const artist = await getArtistById(id);
   if (!artist) {
     return {
       title: 'Artist Not Found',
@@ -21,7 +22,8 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
 }
 
 export default async function ArtistProfilePage({ params }: Props) {
-  const artist = await getArtistById(params.id);
+  const { id } = await params;
+  const artist = await getArtistById(id);
 
   if (!artist) {
     notFound();

@@ -3,7 +3,7 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm, useFieldArray } from 'react-hook-form';
 import * as z from 'zod';
-import { useEffect, useState } from 'react';
+import { use, useEffect, useState } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { doc, getDoc } from 'firebase/firestore';
@@ -93,6 +93,7 @@ const formSchema = z.object({
 
 });
 
+type FormValues = z.infer<typeof formSchema>;
 
 
 
@@ -103,7 +104,8 @@ const formSchema = z.object({
 
 
 
-export default function EditArtistPage({ params }: { params: { id: string } }) {
+
+export default function EditArtistPage({ params }: { params: Promise<{ id: string }> }) {
 
 
 
@@ -116,11 +118,11 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
 
 
     const firestore = useFirestore();
-    const artistId = params.id as string;
+    const { id: artistId } = use(params);
     const [artist, setArtist] = useState<Artist | null>(null);
     const [isLoading, setIsLoading] = useState(true);
 
-    const form = useForm<z.infer<typeof formSchema>>({
+    const form = useForm<FormValues>({
         resolver: zodResolver(formSchema),
         defaultValues: {
             name: '',
@@ -166,15 +168,15 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
       fetchArtist();
     }, [artistId, firestore, form, router, toast]);
 
-    const { fields: linkFields, append: appendLink, remove: removeLink } = useFieldArray({
+    const { fields: linkFields, append: appendLink, remove: removeLink } = useFieldArray<FormValues>({
         control: form.control,
         name: "links"
     });
      const { fields: newGalleryFields, append: appendNewGallery, remove: removeNewGallery } = useFieldArray({
         control: form.control,
-        name: "newGalleryImages"
-    });
-    const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({
+        name: "newGalleryImages",
+    } as any);
+    const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray<FormValues>({
         control: form.control,
         name: "tags"
     });
@@ -372,7 +374,7 @@ export default function EditArtistPage({ params }: { params: { id: string } }) {
                     </Button>
                   </div>
                 ))}
-                <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendNewGallery(undefined)}>
+                <Button type="button" variant="outline" size="sm" className="mt-2" onClick={() => appendNewGallery(null)}>
                   <PlusCircle className="mr-2 h-4 w-4" />
                   Add New Image
                 </Button>
